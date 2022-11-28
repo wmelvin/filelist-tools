@@ -154,9 +154,9 @@ def main(argv):
     for k, v in db_info.items():
         print(f"  {k:>15} = {v}")
 
-    # export_filelist_csv(db_info, out_path, con)
+    export_filelist_csv(db_info, out_path, con)
 
-    # export_fullname_csv(db_info, out_path, con)
+    export_fullname_csv(db_info, out_path, con)
 
     con.close()
 

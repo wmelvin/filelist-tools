@@ -16,7 +16,7 @@ from textwrap import dedent
 
 app_name = os.path.basename(__file__)
 
-app_version = "221127.1"
+app_version = "221128.1"
 
 db_version = 1
 
@@ -34,17 +34,25 @@ run_dt = datetime.now()
 
 def get_args(argv):
     ap = argparse.ArgumentParser(
-        description="Creates a SQLite database containing file information."
+        description="Scans a specified directory path and creates a SQLite "
+        "database containing some basic information about each file: "
+        "File name, Directory path, Last Modified timestamp, Size, "
+        "SHA1 and MD5 hashes.\n"
     )
 
     ap.add_argument(
         "scandir",
         action="store",
-        help="Directory path to scan for files.",
+        help="Directory path to scan for files. The scan is always "
+        "recursive, so all files in any sub-directories of the "
+        "specified path are included.",
     )
 
     ap.add_argument(
-        "title", action="store", help="Title to use in output file name."
+        "title",
+        action="store",
+        help="Title to identify the filelist. "
+        "The title is used in the name of the output file.",
     )
 
     ap.add_argument(
@@ -293,11 +301,32 @@ def db_info_finish(con: sqlite3.Connection, opts: AppOptions):
     cur.close()
 
 
+def db_add_directory(cur: sqlite3.Cursor, dir_id: int, dir_path: str):
+    run_sql(
+        cur,
+        "INSERT INTO directories VALUES (?, ?)",
+        (dir_id, dir_path),
+    )
+
+
 def get_output_file_name(opts: AppOptions):
     name = "FileList-{0}-{1}.sqlite".format(
         opts.title, run_dt.strftime("%Y%m%d_%H%M%S")
     )
     return os.path.join(opts.outdir, name)
+
+
+def get_percent_complete_str(completed, total):
+    if completed < 1:
+        return "0%"
+    if total < 1:
+        return "(?)"
+    pct = completed / total
+    #  Do not return 100% because, for large input values, the result may
+    #  display as 100% well before the process is finished.
+    if 0.999 < pct:
+        return "99.9%"
+    return f"{pct:0.1%}"
 
 
 def main(argv):
@@ -328,18 +357,17 @@ def main(argv):
 
         con = sqlite3.connect(outfile)
         create_tables_and_views(con)
-
         db_info_start(con, opts)
 
         cur = con.cursor()
 
         dirs = {}
         dir_id = 0
-        completed_size = 1
+        completed_size = 0
 
         for lst_idx, filename in enumerate(filelist, start=1):
-            pct = completed_size / total_size
-            print(f"{lst_idx:,} of {n_files:,} ({pct:0.1%}): {filename}")
+            pct = get_percent_complete_str(completed_size, total_size)
+            print(f"{lst_idx:,} of {n_files:,} ({pct}): {filename}")
 
             fileinfo = get_file_info(filename, opts)
 
@@ -352,6 +380,10 @@ def main(argv):
                 #  in the 'directories' table.
                 dir_split = dir_name.split(os.sep)
                 dir_path = dir_split[0]
+                if dir_path not in dirs:
+                    dir_id += 1
+                    dirs[dir_path] = dir_id
+                    db_add_directory(cur, dir_id, dir_path)
 
                 for dir_idx in range(1, len(dir_split)):
                     dir = dir_split[dir_idx]
@@ -359,20 +391,12 @@ def main(argv):
                     if dir_path not in dirs:
                         dir_id += 1
                         dirs[dir_path] = dir_id
-                        run_sql(
-                            cur,
-                            "INSERT INTO directories VALUES (?, ?)",
-                            (dir_id, dir_path),
-                        )
+                        db_add_directory(cur, dir_id, dir_path)
             else:
                 if dir_name not in dirs:
                     dir_id += 1
                     dirs[dir_name] = dir_id
-                    run_sql(
-                        cur,
-                        "INSERT INTO directories VALUES (?, ?)",
-                        (dir_id, dir_name),
-                    )
+                    db_add_directory(cur, dir_id, dir_name)
 
             data = (
                 lst_idx,
@@ -396,9 +420,8 @@ def main(argv):
 
         con.commit()
         cur.close()
-
+        print(f"Finished (100%): {n_files:,} files, {completed_size:,} bytes.")
         db_info_finish(con, opts)
-
         con.close()
     else:
         print(f"No files found in '{opts.scandir}'.")
