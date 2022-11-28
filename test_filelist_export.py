@@ -4,6 +4,15 @@ import filelist_export
 import mkfilelist
 
 
+def test_get_args(tmp_path):
+    fake_db: Path = tmp_path / "fake.sqlite"
+    fake_db.write_text("That's no database.")
+    args = ["filelist_export.py", str(fake_db)]
+    db_path, out_path, _, _ = filelist_export.get_args(args)
+    assert isinstance(db_path, Path)
+    assert isinstance(out_path, Path)
+
+
 def test_main(tmp_path):
     scan_path: Path = tmp_path / "test_main_input"
     scan_path.mkdir()
@@ -27,4 +36,4 @@ def test_main(tmp_path):
     assert 0 == result
 
     csv_files = list(out_path.glob("*.csv"))
-    assert 2 == len(csv_files), "Should make two .csv files."
+    assert 1 == len(csv_files), "Should make one .csv file."

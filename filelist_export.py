@@ -2,6 +2,7 @@
 
 import argparse
 import sqlite3
+import string
 import sys
 
 from pathlib import Path
@@ -34,6 +35,20 @@ def get_args(argv):
         "directory.",
     )
 
+    ap.add_argument(
+        "--fullname",
+        dest="do_fullname",
+        action="store_true",
+        help="Also create the 'FullNames' CSV file.",
+    )
+
+    ap.add_argument(
+        "--alt",
+        dest="do_alt",
+        action="store_true",
+        help="Also create the 'Alt' (wide) CSV file.",
+    )
+
     args = ap.parse_args(argv[1:])
 
     # rprint(args)
@@ -50,7 +65,7 @@ def get_args(argv):
 
     assert out_path.exists()
 
-    return db_path, out_path
+    return db_path, out_path, args.do_fullname, args.do_alt
 
 
 def get_db_info(con: sqlite3.Connection):
@@ -138,11 +153,101 @@ def export_fullname_csv(db_info, out_path: Path, con: sqlite3.Connection):
     cur.close()
 
 
-def main(argv):
-    db_path, out_path = get_args(argv)
+def is_hex(s: str) -> bool:
+    return all(c in string.hexdigits for c in s)
 
-    assert isinstance(db_path, Path)
-    assert isinstance(out_path, Path)
+
+def is_not_extension(s: str) -> bool:
+    #  Set of characters observed in what are not really file extensions.
+    unexpected_chars = set('=&')
+    return any(c in unexpected_chars for c in s)
+
+
+def extension_type(s: str) -> str:
+    if s.startswith('.'):
+        ext = s[1:]
+    else:
+        ext = s
+
+    if ext.isnumeric():
+        return 'Num'
+    elif '~' in ext:
+        return 'Bak'
+    elif len(ext) > 5 and is_hex(ext):
+        # Require a minimum length. For example, the extension '.accdb'
+        # is valid hexadecimal, but should be type 'Txt'.
+        return 'Hex'
+    elif is_not_extension(ext):
+        return 'Not'
+    else:
+        return 'Txt'
+
+
+def export_filelist_alt_csv(db_info, out_path: Path, con: sqlite3.Connection):
+    fn = str(db_info["created"])
+    fn = fn.replace(" ", "_").replace("-", "").replace(":", "")
+    fn = f"FileList-{db_info['title']}-{fn}-Alt.csv"
+    fn = str(out_path / fn)
+
+    print(f"Writing '{fn}'.")
+
+    sep = db_info["host_path_sep"]
+
+    cur = con.cursor()
+
+    stmt = dedent(
+        """
+        SELECT
+            sha1,
+            file_name,
+            file_size,
+            last_modified,
+            dir_level,
+            dir_name,
+            error
+        FROM view_filelist
+        ORDER BY dir_name, file_name
+        """
+    )
+    i_sha1 = 0
+    i_file_name = 1
+    i_file_size = 2
+    i_last_modified = 3
+    i_dir_level = 4
+    i_dir_name = 5
+    i_error = 6
+
+    with open(fn, "w") as f:
+        f.write(
+            '"KEY","SHA1","FileName","DirName","LastModified","Size",'
+            '"FileExt","ExtType","Level","FullName","Error"\n'
+        )
+        for row in cur.execute(stmt):
+            key = f"{row[i_sha1]}:{row[i_file_name]}"
+            full_name = f"{row[i_dir_name]}{sep}{row[i_file_name]}"
+            file_ext = Path(row[i_file_name]).suffix
+            f.write(
+                '"{}","{}","{}","{}","{}","{}","{}","{}","{}","{}","{}"\n'
+                .format(
+                    key,
+                    row[i_sha1],
+                    row[i_file_name],
+                    row[i_dir_name],
+                    row[i_last_modified],
+                    row[i_file_size],
+                    file_ext,
+                    extension_type(file_ext),
+                    row[i_dir_level],
+                    full_name,
+                    row[i_error],
+                )
+            )
+
+    cur.close()
+
+
+def main(argv):
+    db_path, out_path, do_fullname, do_alt = get_args(argv)
 
     print(f"Reading '{db_path}'.")
 
@@ -150,13 +255,18 @@ def main(argv):
 
     db_info = get_db_info(con)
 
-    print("\nFileList database details:")
+    print(f"\n\nFileList database details:\n{'-' * 42}")
     for k, v in db_info.items():
-        print(f"  {k:>15} = {v}")
+        print(f"  {k:>15}: {v}")
+    print(f"{'-' * 42}\n")
 
     export_filelist_csv(db_info, out_path, con)
 
-    export_fullname_csv(db_info, out_path, con)
+    if do_fullname:
+        export_fullname_csv(db_info, out_path, con)
+
+    if do_alt:
+        export_filelist_alt_csv(db_info, out_path, con)
 
     con.close()
 

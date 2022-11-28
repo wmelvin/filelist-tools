@@ -32,7 +32,7 @@ optional arguments:
 ## filelist_export.py
 
 ```
-usage: filelist_export.py [-h] [-o OUTDIR] db_file
+usage: filelist_export.py [-h] [-o OUTDIR] [--fullname] [--alt] db_file
 
 Export data from a SQLite database created by 'mkfilelist.py'.
 
@@ -47,6 +47,8 @@ optional arguments:
                         Directory in which to create output files. Optional.
                         By default the output is created in the currrent
                         working directory.
+  --fullname            Also create the 'FullNames' CSV file.
+  --alt                 Also create the 'Alt' (wide) CSV file.
 ```
 
 ---
