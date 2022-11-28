@@ -6,11 +6,16 @@
 ```
 usage: mkfilelist.py [-h] [-o OUTDIR] [-t] [-u] scandir title
 
-Creates a SQLite database containing file information.
+Scans a specified directory path and creates a SQLite database containing some
+basic information about each file: File name, Directory path, Last Modified
+timestamp, Size, SHA1 and MD5 hashes.
 
 positional arguments:
-  scandir               Directory path to scan for files.
-  title                 Title to use in output file name.
+  scandir               Directory path to scan for files. The scan is always
+                        recursive, so all files in any sub-directories of the
+                        specified path are included.
+  title                 Title to identify the filelist. The title is used in
+                        the name of the output file.
 
 optional arguments:
   -h, --help            show this help message and exit
