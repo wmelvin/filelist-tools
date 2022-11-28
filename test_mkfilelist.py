@@ -49,7 +49,10 @@ def test_files_path(tmp_path_factory) -> Path:
     Returns a Path to a test directory with some files to list.
     """
     dir1: Path = tmp_path_factory.mktemp("testdir")
-    (dir1 / "file1.data").write_bytes(b"11")
+
+    (dir1 / "file'1.data").write_bytes(b"11")
+    # Note single-quote in file name.
+
     dir2a = dir1 / "a"
     dir2a.mkdir()
     (dir2a / "file2a1.data").write_bytes(b"21")

@@ -176,10 +176,6 @@ def get_file_info(file_name: str, opts: AppOptions):
     )
 
 
-def prep_text(text: str) -> str:
-    return text.replace("'", "''")
-
-
 def run_sql(cur: sqlite3.Cursor, stmt: str, data=None):
     try:
         if data:
@@ -373,7 +369,7 @@ def main(argv):
 
             completed_size += fileinfo.size
 
-            dir_name = prep_text(fileinfo.dir_name)
+            dir_name = fileinfo.dir_name
 
             if opts.do_all_paths:
                 #  Insert all directory paths so even those with no files are
@@ -402,14 +398,16 @@ def main(argv):
                 lst_idx,
                 fileinfo.sha1,
                 fileinfo.md5,
-                prep_text(fileinfo.file_name),
+                fileinfo.file_name,
                 fileinfo.size,
                 fileinfo.mtime,
                 fileinfo.dir_level,
                 dirs[dir_name],
                 fileinfo.err,
             )
+
             stmt = "INSERT INTO files VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+
             run_sql(cur, stmt, data)
 
             #  Commit along the way when doing a large number of files.
