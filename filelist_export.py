@@ -31,7 +31,7 @@ def get_args(argv):
         dest="outdir",
         action="store",
         help="Directory in which to create output files. Optional. "
-        "By default the output is created in the currrent working "
+        "By default the output is created in the current working "
         "directory.",
     )
 

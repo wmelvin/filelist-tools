@@ -74,7 +74,7 @@ def test_get_hashes(test_file_fixture):
 
 def test_get_file_info(test_file_fixture):
     test_file, sha1sum_result, md5sum_result = test_file_fixture
-    opts = AppOptions(str(test_file.parent), None, 0, "TITLE", False)
+    opts = AppOptions(str(test_file.parent), None, 0, "TITLE")
     file_info = get_file_info(str(test_file), opts)
     assert str(test_file.name) == file_info.file_name
     assert str(test_file.parent) == file_info.dir_name
@@ -189,22 +189,6 @@ def test_w_trim_parent_option(test_files_path, tmp_path):
         "test_creates_sqlite_db",
         f"--output-to={outdir}",
         "-t"
-    ]
-    result = main(args)
-    assert 0 == result
-    dbfiles = list(outdir.glob("*.sqlite"))
-    assert dbfiles, "Should create a .sqlite file in the output directory."
-
-
-def test_w_used_dirs_option(test_files_path, tmp_path):
-    outdir = tmp_path / "output"
-    outdir.mkdir()
-    args = [
-        "mkfilelist.py",
-        str(test_files_path),
-        "test_creates_sqlite_db",
-        f"--output-to={outdir}",
-        "-u"
     ]
     result = main(args)
     assert 0 == result

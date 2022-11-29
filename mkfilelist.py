@@ -16,13 +16,13 @@ from textwrap import dedent
 
 app_name = os.path.basename(__file__)
 
-app_version = "221128.1"
+app_version = "221129.1"
 
 db_version = 1
 
 
 AppOptions = namedtuple(
-    "AppOptions", "scandir, outdir, dirname_start, title, do_all_paths"
+    "AppOptions", "scandir, outdir, dirname_start, title"
 )
 
 FileInfo = namedtuple(
@@ -73,15 +73,6 @@ def get_args(argv):
         help="Trim parent directory from scandir in output.",
     )
 
-    ap.add_argument(
-        "-u",
-        "--used-dirs-only",
-        dest="used_dirs",
-        action="store_true",
-        help="Only save directory paths for directories that have files. By "
-        "default, all parent paths of a file's parent directory are stored.",
-    )
-
     return ap.parse_args(argv[1:])
 
 
@@ -105,10 +96,10 @@ def get_opts(argv):
     else:
         dirname_start = 0
 
-    do_all_paths = not args.used_dirs
+    title = str(args.title).replace(" ", "_")
 
     return AppOptions(
-        args.scandir, outdir, dirname_start, args.title, do_all_paths
+        args.scandir, outdir, dirname_start, title
     )
 
 
@@ -199,7 +190,6 @@ def create_tables_and_views(con: sqlite3.Connection):
             scandir TEXT,
             title TEXT,
             finished TEXT,
-            do_all_paths INTEGER,
             host_path_sep TEXT,
             db_version INTEGER,
             app_name TEXT,
@@ -273,14 +263,13 @@ def db_info_start(con: sqlite3.Connection, opts: AppOptions):
         opts.scandir,
         opts.title,
         "",
-        opts.do_all_paths,
         os.sep,
         db_version,
         app_name,
         app_version,
     )
 
-    stmt = "INSERT INTO db_info VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    stmt = "INSERT INTO db_info VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)"
     run_sql(cur, stmt, data)
     con.commit()
     cur.close()
@@ -369,30 +358,10 @@ def main(argv):
 
             completed_size += fileinfo.size
 
-            dir_name = fileinfo.dir_name
-
-            if opts.do_all_paths:
-                #  Insert all directory paths so even those with no files are
-                #  in the 'directories' table.
-                dir_split = dir_name.split(os.sep)
-                dir_path = dir_split[0]
-                if dir_path not in dirs:
-                    dir_id += 1
-                    dirs[dir_path] = dir_id
-                    db_add_directory(cur, dir_id, dir_path)
-
-                for dir_idx in range(1, len(dir_split)):
-                    dir = dir_split[dir_idx]
-                    dir_path += f"{os.sep}{dir}"
-                    if dir_path not in dirs:
-                        dir_id += 1
-                        dirs[dir_path] = dir_id
-                        db_add_directory(cur, dir_id, dir_path)
-            else:
-                if dir_name not in dirs:
-                    dir_id += 1
-                    dirs[dir_name] = dir_id
-                    db_add_directory(cur, dir_id, dir_name)
+            if fileinfo.dir_name not in dirs:
+                dir_id += 1
+                dirs[fileinfo.dir_name] = dir_id
+                db_add_directory(cur, dir_id, fileinfo.dir_name)
 
             data = (
                 lst_idx,
@@ -402,7 +371,7 @@ def main(argv):
                 fileinfo.size,
                 fileinfo.mtime,
                 fileinfo.dir_level,
-                dirs[dir_name],
+                dirs[fileinfo.dir_name],
                 fileinfo.err,
             )
 
