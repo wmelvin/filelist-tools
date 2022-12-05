@@ -16,7 +16,7 @@ from textwrap import dedent
 
 app_name = os.path.basename(__file__)
 
-app_version = "221129.1"
+app_version = "221205.1"
 
 db_version = 1
 
@@ -301,17 +301,25 @@ def get_output_file_name(opts: AppOptions):
     return os.path.join(opts.outdir, name)
 
 
-def get_percent_complete_str(completed, total):
+def get_percent_complete(completed, total):
     if completed < 1:
-        return "0%"
+        return (0.0, "0%")
     if total < 1:
-        return "(?)"
+        return (0.0, "(?)")
     pct = completed / total
     #  Do not return 100% because, for large input values, the result may
     #  display as 100% well before the process is finished.
     if 0.999 < pct:
         return "99.9%"
-    return f"{pct:0.1%}"
+    return (pct, f"{pct:0.1%}")
+
+
+def get_est_finish(pct_complete):
+    if pct_complete == 0.0:
+        return "(?)"
+    now_dt = datetime.now()
+    est_done = run_dt + ((now_dt - run_dt) / pct_complete)
+    return est_done.strftime("%H:%M:%S")
 
 
 def main(argv):
@@ -351,8 +359,12 @@ def main(argv):
         completed_size = 0
 
         for lst_idx, filename in enumerate(filelist, start=1):
-            pct = get_percent_complete_str(completed_size, total_size)
-            print(f"{lst_idx:,} of {n_files:,} ({pct}): {filename}")
+            pct, pct_str = get_percent_complete(completed_size, total_size)
+            est = get_est_finish(pct)
+            print(
+                f"[ File {lst_idx:,} of {n_files:,} ({pct_str}) - "
+                f"estimated finish at {est} ]\n{filename}"
+            )
 
             fileinfo = get_file_info(filename, opts)
 
@@ -387,11 +399,15 @@ def main(argv):
 
         con.commit()
         cur.close()
-        print(f"Finished (100%): {n_files:,} files, {completed_size:,} bytes.")
+        print(
+            f"\nFinished at {datetime.now():%H:%M:%S} (100%): "
+            f"{n_files:,} files, {completed_size:,} bytes.\n"
+        )
         db_info_finish(con, opts)
         con.close()
+        print(f"Data written to '{outfile}'.\n")
     else:
-        print(f"No files found in '{opts.scandir}'.")
+        print(f"\nNo files found in '{opts.scandir}'.\n")
 
     return 0
 
