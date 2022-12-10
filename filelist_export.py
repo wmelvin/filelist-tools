@@ -10,6 +10,10 @@ from textwrap import dedent
 
 # from rich import print as rprint
 
+app_name = Path(__file__).name
+
+app_version = "221210.1"
+
 
 def get_args(argv):
     ap = argparse.ArgumentParser(
@@ -82,10 +86,10 @@ def get_db_info(con: sqlite3.Connection):
 def export_filelist_csv(db_info, out_path: Path, con: sqlite3.Connection):
     fn = str(db_info["created"])
     fn = fn.replace(" ", "_").replace("-", "").replace(":", "")
-    fn = f"FileList-{db_info['title']}-{fn}.csv"
+    fn = "FileList-{}-{}.csv".format(db_info['title'], fn)
     fn = str(out_path / fn)
 
-    print(f"Writing '{fn}'.")
+    print("Writing '{}'.".format(fn))
 
     cur = con.cursor()
 
@@ -131,10 +135,10 @@ def export_filelist_csv(db_info, out_path: Path, con: sqlite3.Connection):
 def export_fullname_csv(db_info, out_path: Path, con: sqlite3.Connection):
     fn = str(db_info["created"])
     fn = fn.replace(" ", "_").replace("-", "").replace(":", "")
-    fn = f"FileList-{db_info['title']}-{fn}-FullName.csv"
+    fn = "FileList-{}-{}-FullName.csv".format(db_info['title'], fn)
     fn = str(out_path / fn)
 
-    print(f"Writing '{fn}'.")
+    print("Writing '{}'.".format(fn))
 
     sep = db_info["host_path_sep"]
 
@@ -186,10 +190,10 @@ def extension_type(s: str) -> str:
 def export_filelist_alt_csv(db_info, out_path: Path, con: sqlite3.Connection):
     fn = str(db_info["created"])
     fn = fn.replace(" ", "_").replace("-", "").replace(":", "")
-    fn = f"FileList-{db_info['title']}-{fn}-Alt.csv"
+    fn = "FileList-{}-{}-Alt.csv".format(db_info['title'], fn)
     fn = str(out_path / fn)
 
-    print(f"Writing '{fn}'.")
+    print("Writing '{}'.".format(fn))
 
     sep = db_info["host_path_sep"]
 
@@ -223,8 +227,8 @@ def export_filelist_alt_csv(db_info, out_path: Path, con: sqlite3.Connection):
             '"FileExt","ExtType","Level","FullName","Error"\n'
         )
         for row in cur.execute(stmt):
-            key = f"{row[i_sha1]}:{row[i_file_name]}"
-            full_name = f"{row[i_dir_name]}{sep}{row[i_file_name]}"
+            key = "{}:{}".format(row[i_sha1], row[i_file_name])
+            full_name = "{}{}{}".format(row[i_dir_name], sep, row[i_file_name])
             file_ext = Path(row[i_file_name]).suffix
             f.write(
                 '"{}","{}","{}","{}","{}","{}","{}","{}","{}","{}","{}"\n'
@@ -247,18 +251,21 @@ def export_filelist_alt_csv(db_info, out_path: Path, con: sqlite3.Connection):
 
 
 def main(argv):
+    print("\n{} (version {})\n".format(app_name, app_version))
+
     db_path, out_path, do_fullname, do_alt = get_args(argv)
 
-    print(f"Reading '{db_path}'.")
+    print("Reading '{}'.".format(db_path))
 
     con = sqlite3.connect(str(db_path))
 
     db_info = get_db_info(con)
 
-    print(f"\n\nFileList database details:\n{'-' * 42}")
+    bar = '-' * 42
+    print("\n\nFileList database details:\n{}".format(bar))
     for k, v in db_info.items():
-        print(f"  {k:>15}: {v}")
-    print(f"{'-' * 42}\n")
+        print("  {:>15}: {}".format(k, v))
+    print("{}\n".format(bar))
 
     export_filelist_csv(db_info, out_path, con)
 
