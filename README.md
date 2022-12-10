@@ -13,7 +13,7 @@ Having the data in a SQLite file affords using tools such as [DB Browser for SQL
 #### Command-line Usage
 
 ```
-usage: mkfilelist.py [-h] [-o OUTDIR] [-t] scandir title
+usage: mkfilelist.py [-h] [-o OUTDIR] [-t] [--no-log] scandir title
 
 Scans a specified directory path and creates a SQLite database containing some
 basic information about each file: File name, Directory path, Last Modified
@@ -33,6 +33,7 @@ optional arguments:
                         Optional. By default the output file is created in the
                         currrent working directory.
   -t, --trim-parent     Trim parent directory from scandir in output.
+  --no-log              Do not create a log file.
 ```
 
 ## filelist_export.py

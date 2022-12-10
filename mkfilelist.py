@@ -16,13 +16,15 @@ from textwrap import dedent
 
 app_name = os.path.basename(__file__)
 
-app_version = "221205.1"
+app_version = "221210.1"
 
 db_version = 1
 
+log_file_name = None
+
 
 AppOptions = namedtuple(
-    "AppOptions", "scandir, outdir, dirname_start, title"
+    "AppOptions", "scandir, outdir, dirname_start, title, log_path"
 )
 
 FileInfo = namedtuple(
@@ -30,6 +32,17 @@ FileInfo = namedtuple(
 )
 
 run_dt = datetime.now()
+
+
+def write_log(message: str):
+    if log_file_name is None:
+        return
+    with open(log_file_name, "a") as f:
+        f.write(
+            "[{}]: {}\n".format(
+                datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), message
+            )
+        )
 
 
 def get_args(argv):
@@ -73,6 +86,13 @@ def get_args(argv):
         help="Trim parent directory from scandir in output.",
     )
 
+    ap.add_argument(
+        "--no-log",
+        dest="no_log",
+        action="store_true",
+        help="Do not create a log file.",
+    )
+
     return ap.parse_args(argv[1:])
 
 
@@ -98,9 +118,12 @@ def get_opts(argv):
 
     title = str(args.title).replace(" ", "_")
 
-    return AppOptions(
-        args.scandir, outdir, dirname_start, title
-    )
+    if args.no_log:
+        log_path = None
+    else:
+        log_path = os.path.join(outdir, "mkfilelist.log")
+
+    return AppOptions(args.scandir, outdir, dirname_start, title, log_path)
 
 
 def get_hashes(file_name: str):
@@ -174,7 +197,7 @@ def run_sql(cur: sqlite3.Cursor, stmt: str, data=None):
         else:
             cur.execute(stmt)
     except Exception as e:
-        print(f"\n{stmt}\n")
+        print("\n{}\n".format(stmt))
         raise e
 
 
@@ -280,7 +303,9 @@ def db_info_finish(con: sqlite3.Connection, opts: AppOptions):
     key = run_dt.strftime("%Y-%m-%d %H:%M:%S")
     dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cur = con.cursor()
-    stmt = f"UPDATE db_info SET finished = '{dt}' WHERE created = '{key}'"
+    stmt = "UPDATE db_info SET finished = '{}' WHERE created = '{}'".format(
+        dt, key
+    )
     run_sql(cur, stmt)
     con.commit()
     cur.close()
@@ -302,16 +327,16 @@ def get_output_file_name(opts: AppOptions):
 
 
 def get_percent_complete(completed, total):
-    if completed < 1:
-        return (0.0, "0%")
     if total < 1:
         return (0.0, "(?)")
+    if completed < 1:
+        return (0.0, "0%")
     pct = completed / total
     #  Do not return 100% because, for large input values, the result may
     #  display as 100% well before the process is finished.
     if 0.999 < pct:
-        return "99.9%"
-    return (pct, f"{pct:0.1%}")
+        return pct, "99.9%"
+    return (pct, "{:0.1%}".format(pct))
 
 
 def get_est_finish(pct_complete):
@@ -324,19 +349,33 @@ def get_est_finish(pct_complete):
 
 def main(argv):
     opts = get_opts(argv)
+    global log_file_name
+    log_file_name = opts.log_path
+    has_warnings = False
+
+    write_log("START {} (version {})".format(app_name, app_version))
+    print("\n{} (version {})\n".format(app_name, app_version))
+
+    write_log("SCAN '{0}'".format(opts.scandir))
+    print("Scanning '{0}'.\n".format(opts.scandir))
+
     filelist = []
 
-    print("\nScanning '{0}'.\n".format(opts.scandir))
-
-    for thisDir, subDirs, fileNames in os.walk(opts.scandir):
-        for fileName in fileNames:
-            fullName = os.path.join(thisDir, fileName)
-            filelist.append(fullName)
+    for this_dir, _, file_names in os.walk(opts.scandir):
+        for file_name in file_names:
+            full_name = os.path.join(this_dir, file_name)
+            if os.path.isfile(full_name):
+                filelist.append(full_name)
+            else:
+                has_warnings = True
+                write_log("WARNING: Not a valid file: '{}'".format(full_name))
 
     print("Getting total file size.")
 
     total_size = sum(os.path.getsize(fn) for fn in filelist)
-    print(f"  {total_size:,}")
+
+    write_log("Total size: {:,}".format(total_size))
+    print("  {:,}".format(total_size))
 
     print("Preparing list of files.")
     filelist.sort()
@@ -344,7 +383,9 @@ def main(argv):
     if filelist:
         outfile = get_output_file_name(opts)
 
-        print(f"Writing '{outfile}'.")
+        print("Writing '{}'.".format(outfile))
+
+        write_log("Writing '{}'".format(outfile))
 
         n_files = len(filelist)
 
@@ -360,10 +401,11 @@ def main(argv):
 
         for lst_idx, filename in enumerate(filelist, start=1):
             pct, pct_str = get_percent_complete(completed_size, total_size)
-            est = get_est_finish(pct)
+            est = "estimated finish at {}".format(get_est_finish(pct))
             print(
-                f"[ File {lst_idx:,} of {n_files:,} ({pct_str}) - "
-                f"estimated finish at {est} ]\n{filename}"
+                "[ File {0:,} of {1:,} ({2}) - {3} ]\n{4}".format(
+                    lst_idx, n_files, pct_str, est, filename
+                )
             )
 
             fileinfo = get_file_info(filename, opts)
@@ -399,15 +441,21 @@ def main(argv):
 
         con.commit()
         cur.close()
-        print(
-            f"\nFinished at {datetime.now():%H:%M:%S} (100%): "
-            f"{n_files:,} files, {completed_size:,} bytes.\n"
+
+        msg = "Finished at {0} (100%): {1:,} files, {2:,} bytes.".format(
+            datetime.now().strftime("%H:%M:%S"), n_files, completed_size
         )
+        write_log(msg)
+        print("\n{}\n".format(msg))
+
         db_info_finish(con, opts)
         con.close()
-        print(f"Data written to '{outfile}'.\n")
+        print("Data written to '{}'.\n".format(outfile))
+        if has_warnings:
+            print("WARNINGS written to '{}'.".format(log_file_name))
     else:
-        print(f"\nNo files found in '{opts.scandir}'.\n")
+        write_log("No files found.")
+        print("\nNo files found in '{}'.\n".format(opts.scandir))
 
     return 0
 

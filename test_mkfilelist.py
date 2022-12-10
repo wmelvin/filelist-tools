@@ -9,6 +9,7 @@ from mkfilelist import (
     get_hashes,
     get_file_info,
     get_output_file_name,
+    get_percent_complete,
     AppOptions,
     main,
 )
@@ -57,10 +58,12 @@ def test_files_path(tmp_path_factory) -> Path:
     dir2a.mkdir()
     (dir2a / "file2a1.data").write_bytes(b"21")
     (dir2a / "file2a2.data").write_bytes(b"22")
+
     dir2b = dir1 / "b"
     dir2b.mkdir()
-    (dir2b / "file2a1.data").write_bytes(b"23")
-    (dir2b / "file2a2.data").write_bytes(b"24")
+    (dir2b / "file2b1.data").write_bytes(b"23")
+    (dir2b / "file2b2.data").write_bytes(b"24")
+
     return dir1
 
 
@@ -74,7 +77,7 @@ def test_get_hashes(test_file_fixture):
 
 def test_get_file_info(test_file_fixture):
     test_file, sha1sum_result, md5sum_result = test_file_fixture
-    opts = AppOptions(str(test_file.parent), None, 0, "TITLE")
+    opts = AppOptions(str(test_file.parent), None, 0, "TITLE", None)
     file_info = get_file_info(str(test_file), opts)
     assert str(test_file.name) == file_info.file_name
     assert str(test_file.parent) == file_info.dir_name
@@ -171,13 +174,15 @@ def test_creates_sqlite_db(test_files_path, tmp_path):
     #  for manual review.
     opts = get_opts(args)
     fn = get_output_file_name(opts)
-    (test_output / "test_creates_sqlite_db.txt").\
-        write_text(f"output_file_name:\n{fn}\n\nsqlitebrowser {fn}\n")
+    (test_output / "test_creates_sqlite_db.txt").write_text(
+        f"output_file_name:\n{fn}\n\nsqlitebrowser {fn}\n"
+    )
 
     result = main(args)
     assert 0 == result
     dbfiles = list(outdir.glob("*.sqlite"))
     assert dbfiles, "Should create a .sqlite file in the output directory."
+    assert (outdir / "mkfilelist.log").exists(), "Should make a log file."
 
 
 def test_w_trim_parent_option(test_files_path, tmp_path):
@@ -188,9 +193,35 @@ def test_w_trim_parent_option(test_files_path, tmp_path):
         str(test_files_path),
         "test_creates_sqlite_db",
         f"--output-to={outdir}",
-        "-t"
+        "-t",
+        "--no-log",
     ]
     result = main(args)
     assert 0 == result
     dbfiles = list(outdir.glob("*.sqlite"))
     assert dbfiles, "Should create a .sqlite file in the output directory."
+    assert not (
+        outdir / "mkfilelist.log"
+    ).exists(), "Should not make a log file given '--no-log'."
+
+
+def test_get_pct_complete():
+    pct, pct_str = get_percent_complete(0, 0)
+    assert pct == 0.0
+    assert pct_str == "(?)"
+
+    pct, pct_str = get_percent_complete(1, 0)
+    assert pct == 0.0
+    assert pct_str == "(?)"
+
+    pct, pct_str = get_percent_complete(0, 1)
+    assert pct == 0.0
+    assert pct_str == "0%"
+
+    pct, pct_str = get_percent_complete(100, 200)
+    assert pct == 0.5
+    assert pct_str == "50.0%"
+
+    pct, pct_str = get_percent_complete(200, 200)
+    assert pct == 1.0
+    assert pct_str == "99.9%", "Should not display over 99.9%."
