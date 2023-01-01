@@ -13,7 +13,9 @@ Having the data in a SQLite file affords using tools such as [DB Browser for SQL
 #### Command-line Usage
 
 ```
-usage: mkfilelist.py [-h] [-o OUTDIR] [-t] [--no-log] scandir title
+usage: mkfilelist.py [-h] [-o OUTDIR] [-n OUTFILENAME] [--force] [-t]
+                     [--no-log]
+                     scandir title
 
 Scans a specified directory path and creates a SQLite database containing some
 basic information about each file: File name, Directory path, Last Modified
@@ -32,6 +34,13 @@ optional arguments:
                         Directory in which to create the output file.
                         Optional. By default the output file is created in the
                         currrent working directory.
+  -n OUTFILENAME, --name OUTFILENAME
+                        Name of the output file to create. Optional. By
+                        default the output file is named using the title and a
+                        current date_time tag. An existing file with the same
+                        name will not beoverwritten unless the --force option
+                        is used.
+  --force               Allow an existing output file to be overwritten.
   -t, --trim-parent     Trim parent directory from scandir in output.
   --no-log              Do not create a log file.
 ```
