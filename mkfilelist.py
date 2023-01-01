@@ -16,7 +16,7 @@ from textwrap import dedent
 
 app_name = os.path.basename(__file__)
 
-app_version = "221210.1"
+app_version = "221231.1"
 
 db_version = 1
 
@@ -24,7 +24,9 @@ log_file_name = None
 
 
 AppOptions = namedtuple(
-    "AppOptions", "scandir, outdir, dirname_start, title, log_path"
+    "AppOptions",
+    "scandir, outdir, outfilename, do_overwrite, "
+    "dirname_start, title, log_path",
 )
 
 FileInfo = namedtuple(
@@ -79,6 +81,24 @@ def get_args(argv):
     )
 
     ap.add_argument(
+        "-n",
+        "--name",
+        dest="outfilename",
+        action="store",
+        help="Name of the output file to create. Optional. "
+        "By default the output file is named using the title and a current "
+        "date_time tag. An existing file with the same name will not be"
+        "overwritten unless the --force option is used.",
+    )
+
+    ap.add_argument(
+        "--force",
+        dest="do_overwrite",
+        action="store_true",
+        help="Allow an existing output file to be overwritten.",
+    )
+
+    ap.add_argument(
         "-t",
         "--trim-parent",
         dest="trim_parent",
@@ -123,7 +143,29 @@ def get_opts(argv):
     else:
         log_path = os.path.join(outdir, "mkfilelist.log")
 
-    return AppOptions(args.scandir, outdir, dirname_start, title, log_path)
+    if args.outfilename:
+        dn, fn = os.path.split(args.outfilename)
+        if dn and args.outdir:
+            raise SystemExit(
+                "Do not use outdir (-o, --output-to) when including the "
+                "directory in outfilename (--name)."
+            )
+        check_fn = os.path.join(outdir, fn)
+        if os.path.exists(check_fn) and not args.do_overwrite:
+            raise SystemExit("Output file already exists: " + check_fn)
+        outfilename = fn
+    else:
+        outfilename = None
+
+    return AppOptions(
+        args.scandir,
+        outdir,
+        outfilename,
+        args.do_overwrite,
+        dirname_start,
+        title,
+        log_path,
+    )
 
 
 def get_hashes(file_name: str):
@@ -320,9 +362,12 @@ def db_add_directory(cur: sqlite3.Cursor, dir_id: int, dir_path: str):
 
 
 def get_output_file_name(opts: AppOptions):
-    name = "FileList-{0}-{1}.sqlite".format(
-        opts.title, run_dt.strftime("%Y%m%d_%H%M%S")
-    )
+    if opts.outfilename is None:
+        name = "FileList-{0}-{1}.sqlite".format(
+            opts.title, run_dt.strftime("%Y%m%d_%H%M%S")
+        )
+    else:
+        name = opts.outfilename
     return os.path.join(opts.outdir, name)
 
 
@@ -386,6 +431,13 @@ def main(argv):
         print("Writing '{}'.".format(outfile))
 
         write_log("Writing '{}'".format(outfile))
+
+        if os.path.exists(outfile):
+            if opts.do_overwrite:
+                write_log("Overwrite existing file.")
+                os.unlink(outfile)
+            else:
+                raise SystemExit("Cannot replace existing output file.")
 
         n_files = len(filelist)
 
