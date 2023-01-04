@@ -16,7 +16,7 @@ from textwrap import dedent
 
 app_name = os.path.basename(__file__)
 
-app_version = "221231.1"
+app_version = "230103.1"
 
 db_version = 1
 
@@ -138,24 +138,26 @@ def get_opts(argv):
 
     title = str(args.title).replace(" ", "_")
 
-    if args.no_log:
-        log_path = None
-    else:
-        log_path = os.path.join(outdir, "mkfilelist.log")
-
     if args.outfilename:
         dn, fn = os.path.split(args.outfilename)
-        if dn and args.outdir:
-            raise SystemExit(
-                "Do not use outdir (-o, --output-to) when including the "
-                "directory in outfilename (--name)."
-            )
+        if dn:
+            if args.outdir:
+                raise SystemExit(
+                    "Do not use outdir (-o, --output-to) when including the "
+                    "directory in outfilename (--name)."
+                )
+            outdir = dn
         check_fn = os.path.join(outdir, fn)
         if os.path.exists(check_fn) and not args.do_overwrite:
             raise SystemExit("Output file already exists: " + check_fn)
         outfilename = fn
     else:
         outfilename = None
+
+    if args.no_log:
+        log_path = None
+    else:
+        log_path = os.path.join(outdir, "mkfilelist.log")
 
     return AppOptions(
         args.scandir,

@@ -73,7 +73,7 @@ def test_get_args():
 
 def test_path_not_found():
     args = ["mkfilelist.py", "badpath", "TITLE"]
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit, match="Path not found"):
         get_opts(args)
 
 
@@ -238,7 +238,7 @@ def test_specify_output_filename(tmpdir_with_files, tmp_path):
 
     #  Running again should raise a SystemExit because the output
     #  file already exists.
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit, match="Output file already exists"):
         main(args)
 
     #  Add the --force option and run again.
