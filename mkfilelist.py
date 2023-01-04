@@ -16,7 +16,7 @@ from textwrap import dedent
 
 app_name = os.path.basename(__file__)
 
-app_version = "230103.1"
+app_version = "230104.1"
 
 db_version = 1
 
@@ -87,7 +87,7 @@ def get_args(argv):
         action="store",
         help="Name of the output file to create. Optional. "
         "By default the output file is named using the title and a current "
-        "date_time tag. An existing file with the same name will not be"
+        "date_time tag. An existing file with the same name will not be "
         "overwritten unless the --force option is used.",
     )
 

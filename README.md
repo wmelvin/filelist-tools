@@ -38,12 +38,14 @@ optional arguments:
                         Name of the output file to create. Optional. By
                         default the output file is named using the title and a
                         current date_time tag. An existing file with the same
-                        name will not beoverwritten unless the --force option
+                        name will not be overwritten unless the --force option
                         is used.
   --force               Allow an existing output file to be overwritten.
   -t, --trim-parent     Trim parent directory from scandir in output.
   --no-log              Do not create a log file.
 ```
+
+---
 
 ## filelist_export.py
 
@@ -69,6 +71,48 @@ optional arguments:
                         working directory.
   --fullname            Also create the 'FullNames' CSV file.
   --alt                 Also create the 'Alt' (wide) CSV file.
+```
+
+---
+
+## filelist_merge.py
+
+This utility reads SQLite database files, created by `mkfilelist.py`, and merges the data into a new SQLite database. Additional files can be appended to an existing *MergeFileLists* database.
+
+#### Command-line Usage
+
+```
+usage: filelist_merge.py [-h] [-o OUTDIR] [-n OUTFILENAME] [--force] [-a]
+                         [source_files [source_files ...]]
+
+Merges two or more SQLite databases created by mkfilelist.py.
+
+positional arguments:
+  source_files          Files to be merged. Multiple file names are separated
+                        by spaces. A single file name may be given in the case
+                        of appending to an existing merged database. In that
+                        case, the destination file must also be specified in
+                        the --name parameter. Also, a Tag (short name for a
+                        filelist to use instead of its Title) can be included
+                        after a file name using a comma (with no spaces)
+                        followed by the tag (filename,tag).
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o OUTDIR, --output-to OUTDIR
+                        Directory in which to create the output file.
+                        Optional. By default the output file is created in the
+                        currrent working directory.
+  -n OUTFILENAME, --name OUTFILENAME
+                        Name of the output file to create. Optional. By
+                        default the output file is named starting with
+                        'MergeFileLists' followed by a current date_time tag.
+                        An existing file with the same name will not be
+                        overwritten unless the --force option is used.
+  --force               Allow an existing output file to be overwritten.
+  -a, --append          Append the filelist data to an existing merged
+                        database. The destination file name must be specified
+                        using the --name parameter.
 ```
 
 ---
