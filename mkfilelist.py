@@ -16,7 +16,7 @@ from textwrap import dedent
 
 app_name = os.path.basename(__file__)
 
-app_version = "230104.1"
+app_version = "230129.1"
 
 db_version = 1
 
@@ -201,6 +201,7 @@ def get_file_info(file_name: str, opts: AppOptions):
     sha1 = ""
     md5 = ""
     err_str = ""
+    dir_level = 0
 
     dir_name, base_name = os.path.split(file_name)
 
