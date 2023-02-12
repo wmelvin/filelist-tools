@@ -5,13 +5,13 @@ import filelist_export
 import mkfilelist
 
 
-def test_get_args(tmp_path):
+def test_get_opts(tmp_path):
     fake_db: Path = tmp_path / "fake.sqlite"
     fake_db.write_text("That's no database.")
     args = ["filelist_export.py", str(fake_db)]
-    db_path, out_path, _, _ = filelist_export.get_args(args)
-    assert isinstance(db_path, Path)
-    assert isinstance(out_path, Path)
+    opts = filelist_export.get_opts(args)
+    assert isinstance(opts.db_path, Path)
+    assert isinstance(opts.out_path, Path)
 
 
 def test_main(tmp_path):

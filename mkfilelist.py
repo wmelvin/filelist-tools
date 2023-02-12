@@ -16,7 +16,7 @@ from textwrap import dedent
 
 app_name = os.path.basename(__file__)
 
-app_version = "230129.1"
+app_version = "230212.1"
 
 db_version = 1
 
@@ -366,7 +366,7 @@ def db_add_directory(cur: sqlite3.Cursor, dir_id: int, dir_path: str):
 
 def get_output_file_name(opts: AppOptions):
     if opts.outfilename is None:
-        name = "FileList-{0}-{1}.sqlite".format(
+        name = "FileListDb-{0}-{1}.sqlite".format(
             opts.title, run_dt.strftime("%Y%m%d_%H%M%S")
         )
     else:

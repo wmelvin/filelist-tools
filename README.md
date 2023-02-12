@@ -54,7 +54,8 @@ This utility reads a SQLite database file, created by `mkfilelist.py`, and write
 #### Command-line Usage
 
 ```
-usage: filelist_export.py [-h] [-o OUTDIR] [--fullname] [--alt] db_file
+usage: filelist_export.py [-h] [-o OUTDIR] [--fullname] [--alt] [--dfn]
+                          db_file
 
 Export data from a SQLite database created by 'mkfilelist.py'.
 
@@ -71,6 +72,8 @@ optional arguments:
                         working directory.
   --fullname            Also create the 'FullNames' CSV file.
   --alt                 Also create the 'Alt' (wide) CSV file.
+  --dfn                 Create a CSV file by Directory and FileName where
+                        those are the first two columns.
 ```
 
 ---
