@@ -16,7 +16,7 @@ from textwrap import dedent
 
 app_name = os.path.basename(__file__)
 
-app_version = "230212.1"
+app_version = "230828.1"
 
 db_version = 1
 
@@ -34,6 +34,7 @@ FileInfo = namedtuple(
 )
 
 run_dt = datetime.now()
+start_dt = run_dt
 
 
 def write_log(message: str):
@@ -216,7 +217,6 @@ def get_file_info(file_name: str, opts: AppOptions):
         err_str = "(link)"
 
     if len(err_str) == 0:
-
         filesize = os.path.getsize(file_name)
 
         mtime = time.strftime(
@@ -391,7 +391,7 @@ def get_est_finish(pct_complete):
     if pct_complete == 0.0:
         return "(?)"
     now_dt = datetime.now()
-    est_done = run_dt + ((now_dt - run_dt) / pct_complete)
+    est_done = start_dt + ((now_dt - start_dt) / pct_complete)
     return est_done.strftime("%H:%M:%S")
 
 
@@ -454,6 +454,11 @@ def main(argv):
         dir_id = 0
         completed_size = 0
 
+        #  Set start_dt here so initial scan time is not included when
+        #  calculating the estimated finish time.
+        global start_dt
+        start_dt = datetime.now()
+
         for lst_idx, filename in enumerate(filelist, start=1):
             pct, pct_str = get_percent_complete(completed_size, total_size)
             est = "estimated finish at {}".format(get_est_finish(pct))
@@ -497,14 +502,26 @@ def main(argv):
         con.commit()
         cur.close()
 
-        msg = "Finished at {0} (100%): {1:,} files, {2:,} bytes.".format(
-            datetime.now().strftime("%H:%M:%S"), n_files, completed_size
+        #  Include initial scan in total run time.
+        run_time = datetime.now() - run_dt
+
+        msg = (
+                "Finished at {0} (100%): {1:,} files, {2:,} bytes. "
+                "Run time {3}"
+            ).format(
+            datetime.now().strftime("%H:%M:%S"),
+            n_files,
+            completed_size,
+            run_time,
         )
+
         write_log(msg)
         print("\n{}\n".format(msg))
 
         db_info_finish(con, opts)
+
         con.close()
+
         print("Data written to '{}'.\n".format(outfile))
         if has_warnings:
             print("WARNINGS written to '{}'.".format(log_file_name))
