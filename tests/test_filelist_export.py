@@ -1,8 +1,11 @@
 
 from pathlib import Path
 
+import pytest
+
 import filelist_export
 import mkfilelist
+
 
 
 def test_get_opts(tmp_path):
@@ -38,3 +41,41 @@ def test_main(tmp_path):
 
     csv_files = list(out_path.glob("*.csv"))
     assert 1 == len(csv_files), "Should make one .csv file."
+
+
+def test_bad_file_name(tmp_path, capsys):
+    bad_filename = str(tmp_path / "im-not-here.sqlite")
+    args = [
+        "filelist_export.py",
+        bad_filename,
+        f"--output-to={tmp_path}"
+    ]
+    with pytest.raises(SystemExit):
+        filelist_export.main(args)
+
+    captured = capsys.readouterr()
+
+    assert f"Cannot find '{bad_filename}'" in captured.err
+
+
+def test_bad_output_dir_name(tmp_path: Path, capsys):
+    fake_db = tmp_path / "fake.db"
+    fake_db.write_text(
+        "Not really a database, but that shouldn't matter here."
+    )
+    assert fake_db.exists()
+
+    bad_out_dir = tmp_path / "im-not-here"
+    assert not bad_out_dir.exists()
+
+    args = [
+        "filelist_export.py",
+        str(fake_db),
+        f"--output-to={str(bad_out_dir)}"
+    ]
+    with pytest.raises(SystemExit):
+        filelist_export.main(args)
+
+    captured = capsys.readouterr()
+
+    assert f"Directory not found: '{bad_out_dir}'" in captured.err

@@ -9,11 +9,11 @@ from collections import namedtuple
 from pathlib import Path
 from textwrap import dedent
 
-# from rich import print as rprint
 
 app_name = Path(__file__).name
 
-app_version = "230212.1"
+#  calver YYYY.0M.MICRO
+app_version = "2023.12.1"
 
 AppOptions = namedtuple(
     "AppOptions", "db_path, out_path, do_fullname, do_alt, do_dfn"
@@ -72,12 +72,11 @@ def get_args(argv):
 def get_opts(argv) -> AppOptions:
     args = get_args(argv)
 
-    # rprint(args)
-
     db_path = Path(args.db_file)
 
-    assert db_path.exists()
-    # TODO: Handle error.
+    if not db_path.exists():
+        sys.stderr.write(f"ERROR: Cannot find '{db_path}'")
+        sys.exit(1)
 
     outdir = args.outdir
     if outdir:
@@ -85,7 +84,9 @@ def get_opts(argv) -> AppOptions:
     else:
         out_path = Path.cwd()
 
-    assert out_path.exists()
+    if not out_path.exists():
+        sys.stderr.write(f"ERROR: Directory not found: '{out_path}'")
+        sys.exit(1)
 
     return AppOptions(
         db_path, out_path, args.do_fullname, args.do_alt, args.do_dfn
