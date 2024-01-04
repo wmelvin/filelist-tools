@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import argparse
 import sqlite3
 import sys
-
-from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
-from typing import List, Tuple
-
+from typing import NamedTuple
 
 app_name = Path(__file__).name
 
-app_version = "230104.1"
+app_version = "2024.01.1"
 
 run_dt = datetime.now()
 
 
-AppOptions = namedtuple(
-    "AppOptions", "src_dbs, outpath, outfilename, do_overwrite, do_append"
-)
+class AppOptions(NamedTuple):
+    src_dbs: str
+    outpath: Path
+    outfilename: str
+    do_overwrite: bool
+    do_append: bool
 
 
 def run_sql(cur: sqlite3.Cursor, stmt: str, data=None):
@@ -128,9 +130,7 @@ def insert_filelist(
 
     dst_cur = dst_con.cursor()
 
-    dst_cur.execute(
-        "SELECT COUNT(*) FROM filelists WHERE tag = '{}'".format(src_tag)
-    )
+    dst_cur.execute("SELECT COUNT(*) FROM filelists WHERE tag = '{}'".format(src_tag))  # noqa: S608
     result = dst_cur.fetchone()[0]
     if result:
         print("Tag '{}' already in destination.".format(src_tag))
@@ -304,7 +304,7 @@ def get_opts(argv):
     if not args.source_files:
         raise SystemExit("No source files specified.")
 
-    src_dbs: List[Tuple[Path, str]] = []  # (filename, tag).
+    src_dbs: list[tuple[Path, str]] = []  # (filename, tag).
 
     for src in args.source_files:
         #  Tag may be included in arg as 'filename,tag'.
@@ -382,7 +382,10 @@ def main(argv):
         create_tables(out_con)
 
     for db_path, src_tag in opts.src_dbs:
-        assert db_path.exists()
+        if not db_path.exists():
+            sys.stderr.write(f"\nConnot find '{db_path}'\n")
+            sys.exit(1)
+
         print("Reading '{}'.".format(db_path))
 
         in_con = sqlite3.connect(str(db_path))

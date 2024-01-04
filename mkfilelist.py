@@ -8,30 +8,40 @@ import sqlite3
 import stat
 import sys
 import time
-
-from collections import namedtuple
 from datetime import datetime
+from pathlib import Path
 from textwrap import dedent
+from typing import NamedTuple
 
+app_name = Path(__file__).name
 
-app_name = os.path.basename(__file__)
-
-app_version = "230828.1"
+app_version = "2024.01.1"
 
 db_version = 1
 
 log_file_name = None
 
 
-AppOptions = namedtuple(
-    "AppOptions",
-    "scandir, outdir, outfilename, do_overwrite, "
-    "dirname_start, title, log_path",
-)
+class AppOptions(NamedTuple):
+    scandir: str
+    outdir: str
+    outfilename: str
+    do_overwrite : bool
+    dirname_start: int
+    title: str
+    log_path: str
 
-FileInfo = namedtuple(
-    "FileInfo", "file_name,dir_name,dir_level,sha1,md5,size,mtime,err"
-)
+
+class FileInfo(NamedTuple):
+    file_name: str
+    dir_name: str
+    dir_level: int
+    sha1: str
+    md5: str
+    size: int
+    mtime: str
+    err: str
+
 
 run_dt = datetime.now()
 start_dt = run_dt
@@ -40,7 +50,7 @@ start_dt = run_dt
 def write_log(message: str):
     if log_file_name is None:
         return
-    with open(log_file_name, "a") as f:
+    with Path(log_file_name).open("a") as f:
         f.write(
             "[{}]: {}\n".format(
                 datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), message
@@ -120,22 +130,19 @@ def get_args(argv):
 def get_opts(argv):
     args = get_args(argv)
 
-    if not os.path.exists(args.scandir):
-        raise SystemExit("Path not found (scandir): " + args.scandir)
+    if not Path(args.scandir).exists():
+        sys.stderr.write(f"\nPath not found (scandir): {args.scandir}\n")
+        sys.exit(1)
 
     outdir = args.outdir
     if outdir:
-        if not os.path.exists(outdir):
-            raise SystemExit("Path not found (outdir): " + outdir)
+        if not Path(outdir).exists():
+            sys.stderr.write(f"\nPath not found (outdir): {outdir}\n")
+            sys.exit(1)
     else:
-        outdir = os.getcwd()
+        outdir = str(Path.cwd())
 
-    if args.trim_parent:
-        dirname_start = len(args.scandir) - len(
-            os.path.relpath(args.scandir, os.path.dirname(args.scandir))
-        )
-    else:
-        dirname_start = 0
+    dirname_start = len(str(Path(args.scandir).parent)) + 1 if args.trim_parent else 0
 
     title = str(args.title).replace(" ", "_")
 
@@ -143,22 +150,21 @@ def get_opts(argv):
         dn, fn = os.path.split(args.outfilename)
         if dn:
             if args.outdir:
-                raise SystemExit(
-                    "Do not use outdir (-o, --output-to) when including the "
-                    "directory in outfilename (--name)."
+                sys.stderr.write(
+                    "\nDo not use outdir (-o, --output-to) when including the "
+                    "directory in outfilename (--name).\n"
                 )
+                sys.exit(1)
             outdir = dn
-        check_fn = os.path.join(outdir, fn)
-        if os.path.exists(check_fn) and not args.do_overwrite:
-            raise SystemExit("Output file already exists: " + check_fn)
+        check_fn = Path(outdir) / fn
+        if check_fn.exists() and not args.do_overwrite:
+            sys.stderr.write(f"\nOutput file already exists: {check_fn}\n")
+            sys.exit(1)
         outfilename = fn
     else:
         outfilename = None
 
-    if args.no_log:
-        log_path = None
-    else:
-        log_path = os.path.join(outdir, "mkfilelist.log")
+    log_path = None if args.no_log else Path(outdir) / "mkfilelist.log"
 
     return AppOptions(
         args.scandir,
@@ -176,10 +182,10 @@ def get_hashes(file_name: str):
     Returns a tuple as (sha1, md5, err):.
     """
     BUFFER_SIZE = 65535
-    md5 = hashlib.md5()
-    sha1 = hashlib.sha1()
+    md5 = hashlib.md5()  # noqa: S324
+    sha1 = hashlib.sha1()  # noqa: S324
     try:
-        with open(file_name, "rb") as f:
+        with Path(file_name).open("rb") as f:
             while True:
                 data = f.read(BUFFER_SIZE)
                 if not data:
@@ -196,7 +202,7 @@ def get_hashes(file_name: str):
 
 
 def get_file_info(file_name: str, opts: AppOptions):
-    # assert isinstance(file_name, str)
+    assert isinstance(file_name, str)  # noqa: S101
     filesize = 0
     mtime = 0
     sha1 = ""
@@ -204,11 +210,14 @@ def get_file_info(file_name: str, opts: AppOptions):
     err_str = ""
     dir_level = 0
 
-    dir_name, base_name = os.path.split(file_name)
+    p = Path(file_name)
+    # dir_name, base_name = os.path.split(file_name)
 
-    dir_name = dir_name[opts.dirname_start :]  # noqa: E203
+    dir_name = str(p.parent)[opts.dirname_start :]
 
-    file_mode = os.lstat(file_name).st_mode
+    # file_mode = os.lstat(file_name).st_mode
+    file_stat = p.stat()
+    file_mode = file_stat.st_mode
 
     if stat.S_ISFIFO(file_mode):
         err_str = "(named pipe)"
@@ -217,10 +226,11 @@ def get_file_info(file_name: str, opts: AppOptions):
         err_str = "(link)"
 
     if len(err_str) == 0:
-        filesize = os.path.getsize(file_name)
+        # filesize = os.path.getsize(file_name)
+        filesize = file_stat.st_size
 
         mtime = time.strftime(
-            "%Y-%m-%d %H:%M:%S", time.localtime(os.path.getmtime(file_name))
+            "%Y-%m-%d %H:%M:%S", time.localtime(file_stat.st_mtime)
         )
 
         if filesize == 0:
@@ -231,7 +241,7 @@ def get_file_info(file_name: str, opts: AppOptions):
         dir_level = dir_name.count(os.path.sep)
 
     return FileInfo(
-        base_name, dir_name, dir_level, sha1, md5, filesize, mtime, err_str
+        p.name, dir_name, dir_level, sha1, md5, filesize, mtime, err_str
     )
 
 
@@ -348,9 +358,7 @@ def db_info_finish(con: sqlite3.Connection, opts: AppOptions):
     key = run_dt.strftime("%Y-%m-%d %H:%M:%S")
     dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cur = con.cursor()
-    stmt = "UPDATE db_info SET finished = '{}' WHERE created = '{}'".format(
-        dt, key
-    )
+    stmt = "UPDATE db_info SET finished = '{}' WHERE created = '{}'".format(dt, key)  # noqa: S608
     run_sql(cur, stmt)
     con.commit()
     cur.close()
@@ -364,14 +372,14 @@ def db_add_directory(cur: sqlite3.Cursor, dir_id: int, dir_path: str):
     )
 
 
-def get_output_file_name(opts: AppOptions):
+def get_output_file_path(opts: AppOptions) -> Path:
     if opts.outfilename is None:
         name = "FileListDb-{0}-{1}.sqlite".format(
             opts.title, run_dt.strftime("%Y%m%d_%H%M%S")
         )
     else:
         name = opts.outfilename
-    return os.path.join(opts.outdir, name)
+    return Path(opts.outdir) / name
 
 
 def get_percent_complete(completed, total):
@@ -382,7 +390,7 @@ def get_percent_complete(completed, total):
     pct = completed / total
     #  Do not return 100% because, for large input values, the result may
     #  display as 100% well before the process is finished.
-    if 0.999 < pct:
+    if pct > 0.999:
         return pct, "99.9%"
     return (pct, "{:0.1%}".format(pct))
 
@@ -408,19 +416,21 @@ def main(argv):
     print("Scanning '{0}'.\n".format(opts.scandir))
 
     filelist = []
+    total_size = 0
 
     for this_dir, _, file_names in os.walk(opts.scandir):
         for file_name in file_names:
-            full_name = os.path.join(this_dir, file_name)
-            if os.path.isfile(full_name):
-                filelist.append(full_name)
+            full_path = Path(this_dir) / file_name
+            if full_path.is_file():
+                filelist.append(str(full_path))
+                total_size += full_path.stat().st_size
             else:
                 has_warnings = True
-                write_log("WARNING: Not a valid file: '{}'".format(full_name))
+                write_log(f"WARNING: Not a valid file: '{full_path}'")
 
-    print("Getting total file size.")
+    # print("Getting total file size.")
 
-    total_size = sum(os.path.getsize(fn) for fn in filelist)
+    # total_size = sum(os.path.getsize(fn) for fn in filelist)
 
     write_log("Total size: {:,}".format(total_size))
     print("  {:,}".format(total_size))
@@ -429,18 +439,19 @@ def main(argv):
     filelist.sort()
 
     if filelist:
-        outfile = get_output_file_name(opts)
+        outfile = get_output_file_path(opts)
 
         print("Writing '{}'.".format(outfile))
 
         write_log("Writing '{}'".format(outfile))
 
-        if os.path.exists(outfile):
+        if outfile.exists():
             if opts.do_overwrite:
                 write_log("Overwrite existing file.")
-                os.unlink(outfile)
+                outfile.unlink()
             else:
-                raise SystemExit("Cannot replace existing output file.")
+                sys.stderr.write("\nCannot replace existing output file.\n")
+                sys.exit(1)
 
         n_files = len(filelist)
 

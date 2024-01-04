@@ -55,7 +55,7 @@ def test_bad_file_name(tmp_path, capsys):
 
     captured = capsys.readouterr()
 
-    assert f"Cannot find '{bad_filename}'" in captured.err
+    assert f"Cannot find '{bad_filename}'\n" in captured.err
 
 
 def test_bad_output_dir_name(tmp_path: Path, capsys):
@@ -78,4 +78,4 @@ def test_bad_output_dir_name(tmp_path: Path, capsys):
 
     captured = capsys.readouterr()
 
-    assert f"Directory not found: '{bad_out_dir}'" in captured.err
+    assert f"Directory not found: '{bad_out_dir}'\n" in captured.err

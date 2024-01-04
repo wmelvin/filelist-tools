@@ -4,20 +4,22 @@ import argparse
 import sqlite3
 import string
 import sys
-
-from collections import namedtuple
 from pathlib import Path
 from textwrap import dedent
-
+from typing import NamedTuple
 
 app_name = Path(__file__).name
 
 #  calver YYYY.0M.MICRO
-app_version = "2023.12.1"
+app_version = "2024.01.1"
 
-AppOptions = namedtuple(
-    "AppOptions", "db_path, out_path, do_fullname, do_alt, do_dfn"
-)
+
+class AppOptions(NamedTuple):
+    db_path: Path
+    out_path: Path
+    do_fullname: bool
+    do_alt: bool
+    do_dfn: bool
 
 
 def get_args(argv):
@@ -75,17 +77,14 @@ def get_opts(argv) -> AppOptions:
     db_path = Path(args.db_file)
 
     if not db_path.exists():
-        sys.stderr.write(f"ERROR: Cannot find '{db_path}'")
+        sys.stderr.write(f"\nERROR: Cannot find '{db_path}'\n")
         sys.exit(1)
 
     outdir = args.outdir
-    if outdir:
-        out_path = Path(outdir)
-    else:
-        out_path = Path.cwd()
+    out_path = Path(outdir) if outdir else Path.cwd()
 
     if not out_path.exists():
-        sys.stderr.write(f"ERROR: Directory not found: '{out_path}'")
+        sys.stderr.write(f"\nERROR: Directory not found: '{out_path}'\n")
         sys.exit(1)
 
     return AppOptions(
@@ -108,7 +107,7 @@ def export_filelist_csv(db_info, out_path: Path, con: sqlite3.Connection):
     fn = str(db_info["created"])
     fn = fn.replace(" ", "_").replace("-", "").replace(":", "")
     fn = "FileList-{}-{}.csv".format(db_info["title"], fn)
-    fn = str(out_path / fn)
+    fp = out_path / fn
 
     print("Writing '{}'.".format(fn))
 
@@ -130,7 +129,7 @@ def export_filelist_csv(db_info, out_path: Path, con: sqlite3.Connection):
         """
     )
 
-    with open(fn, "w") as f:
+    with fp.open("w") as f:
         f.write(
             '"SHA1","MD5","FileName","Size","LastModified","Level",'
             '"DirName","Error"\n'
@@ -157,7 +156,7 @@ def export_fullname_csv(db_info, out_path: Path, con: sqlite3.Connection):
     fn = str(db_info["created"])
     fn = fn.replace(" ", "_").replace("-", "").replace(":", "")
     fn = "FileList-{}-{}-FullName.csv".format(db_info["title"], fn)
-    fn = str(out_path / fn)
+    fp = out_path / fn
 
     print("Writing '{}'.".format(fn))
 
@@ -170,7 +169,7 @@ def export_fullname_csv(db_info, out_path: Path, con: sqlite3.Connection):
         "ORDER BY dir_name, file_name"
     )
 
-    with open(fn, "w") as f:
+    with fp.open("w") as f:
         f.write('"FullName"\n')
         for row in cur.execute(stmt):
             f.write('"{}{}{}"\n'.format(row[0], sep, row[1]))
@@ -189,30 +188,30 @@ def is_not_extension(s: str) -> bool:
 
 
 def extension_type(s: str) -> str:
-    if s.startswith("."):
-        ext = s[1:]
-    else:
-        ext = s
+    ext = s[1:] if s.startswith(".") else s
 
     if ext.isnumeric():
         return "Num"
-    elif "~" in ext:
+
+    if "~" in ext:
         return "Bak"
-    elif len(ext) > 5 and is_hex(ext):
+
+    if len(ext) > 5 and is_hex(ext):
         # Require a minimum length. For example, the extension '.accdb'
         # is valid hexadecimal, but should be type 'Txt'.
         return "Hex"
-    elif is_not_extension(ext):
+
+    if is_not_extension(ext):
         return "Not"
-    else:
-        return "Txt"
+
+    return "Txt"
 
 
 def export_filelist_alt_csv(db_info, out_path: Path, con: sqlite3.Connection):
     fn = str(db_info["created"])
     fn = fn.replace(" ", "_").replace("-", "").replace(":", "")
     fn = "FileList-{}-{}-Alt.csv".format(db_info["title"], fn)
-    fn = str(out_path / fn)
+    fp = out_path / fn
 
     print("Writing '{}'.".format(fn))
 
@@ -242,7 +241,7 @@ def export_filelist_alt_csv(db_info, out_path: Path, con: sqlite3.Connection):
     i_dir_name = 5
     i_error = 6
 
-    with open(fn, "w") as f:
+    with fp.open("w") as f:
         f.write(
             '"KEY","SHA1","FileName","DirName","LastModified","Size",'
             '"FileExt","ExtType","Level","FullName","Error"\n'
@@ -278,7 +277,7 @@ def export_filelist_dfn_csv(db_info, out_path: Path, con: sqlite3.Connection):
     fn = str(db_info["created"])
     fn = fn.replace(" ", "_").replace("-", "").replace(":", "")
     fn = "FileList-{}-{}-DirFileName.csv".format(db_info["title"], fn)
-    fn = str(out_path / fn)
+    fp = out_path / fn
 
     print("Writing '{}'.".format(fn))
 
@@ -306,7 +305,7 @@ def export_filelist_dfn_csv(db_info, out_path: Path, con: sqlite3.Connection):
     i_dir_name = 5
     i_error = 6
 
-    with open(fn, "w") as f:
+    with fp.open("w") as f:
         f.write(
             '"DirName","FileName","LastModified","Size","SHA1",'
             '"Level","Error"\n'

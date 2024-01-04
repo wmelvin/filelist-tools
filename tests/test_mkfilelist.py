@@ -8,7 +8,7 @@ from mkfilelist import (
     get_opts,
     get_hashes,
     get_file_info,
-    get_output_file_name,
+    get_output_file_path,
     get_percent_complete,
     AppOptions,
     main,
@@ -71,10 +71,11 @@ def test_get_args():
     assert "TITLE" == result.title
 
 
-def test_path_not_found():
+def test_path_not_found(capsys):
     args = ["mkfilelist.py", "badpath", "TITLE"]
-    with pytest.raises(SystemExit, match="Path not found"):
+    with pytest.raises(SystemExit):
         get_opts(args)
+    assert "Path not found" in capsys.readouterr().err
 
 
 def test_get_opts(test_file_fixture):
@@ -160,7 +161,7 @@ def test_creates_sqlite_db(tmpdir_with_files, tmp_path):
     #  database file in the DB Browser for SQLite (sqlitebrowser)
     #  for manual review.
     opts = get_opts(args)
-    fn = get_output_file_name(opts)
+    fn = get_output_file_path(opts)
     (test_output / "test_creates_sqlite_db.txt").write_text(
         f"output_file_name:\n{fn}\n\nsqlitebrowser {fn}\n"
     )
@@ -214,7 +215,7 @@ def test_get_pct_complete():
     assert pct_str == "99.9%", "Should not display over 99.9%."
 
 
-def test_specify_output_filename(tmpdir_with_files, tmp_path):
+def test_specify_output_filename(tmpdir_with_files, tmp_path, capsys):
     outdir = tmp_path / "output"
     outdir.mkdir()
     scan_dir = str(tmpdir_with_files)
@@ -238,8 +239,10 @@ def test_specify_output_filename(tmpdir_with_files, tmp_path):
 
     #  Running again should raise a SystemExit because the output
     #  file already exists.
-    with pytest.raises(SystemExit, match="Output file already exists"):
+    with pytest.raises(SystemExit):
         main(args)
+
+    assert "Output file already exists" in capsys.readouterr().err
 
     #  Add the --force option and run again.
     args = [
