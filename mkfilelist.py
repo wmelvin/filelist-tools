@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import argparse
 import hashlib
 import os
@@ -15,11 +17,9 @@ from typing import NamedTuple
 
 app_name = Path(__file__).name
 
-app_version = "2024.01.1"
+app_version = "2024.01.2"
 
 db_version = 1
-
-log_file_name = None
 
 
 class AppOptions(NamedTuple):
@@ -30,6 +30,7 @@ class AppOptions(NamedTuple):
     dirname_start: int
     title: str
     log_path: str
+    no_log: bool
 
 
 class FileInfo(NamedTuple):
@@ -43,19 +44,26 @@ class FileInfo(NamedTuple):
     err: str
 
 
-run_dt = datetime.now()
-start_dt = run_dt
+class AppLogFile:
+    def __init__(self) -> None:
+        self.log_path: Path | None = None
 
+    def set_log_path(self, log_path: Path):
+        self.log_path = log_path
 
-def write_log(message: str):
-    if log_file_name is None:
-        return
-    with Path(log_file_name).open("a") as f:
-        f.write(
-            "[{}]: {}\n".format(
-                datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), message
+    def write(self, message: str):
+        if self.log_path is None:
+            return
+        with self.log_path.open("a") as f:
+            f.write(
+                "[{}]: {}\n".format(
+                    datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), message
+                )
             )
-        )
+
+
+run_dt = datetime.now()
+app_log = AppLogFile()
 
 
 def get_args(argv):
@@ -164,7 +172,7 @@ def get_opts(argv):
     else:
         outfilename = None
 
-    log_path = None if args.no_log else Path(outdir) / "mkfilelist.log"
+    log_path = Path(outdir) / "mkfilelist.log"
 
     return AppOptions(
         args.scandir,
@@ -174,6 +182,7 @@ def get_opts(argv):
         dirname_start,
         title,
         log_path,
+        args.no_log,
     )
 
 
@@ -211,11 +220,7 @@ def get_file_info(file_name: str, opts: AppOptions):
     dir_level = 0
 
     p = Path(file_name)
-    # dir_name, base_name = os.path.split(file_name)
-
     dir_name = str(p.parent)[opts.dirname_start :]
-
-    # file_mode = os.lstat(file_name).st_mode
     file_stat = p.stat()
     file_mode = file_stat.st_mode
 
@@ -226,7 +231,6 @@ def get_file_info(file_name: str, opts: AppOptions):
         err_str = "(link)"
 
     if len(err_str) == 0:
-        # filesize = os.path.getsize(file_name)
         filesize = file_stat.st_size
 
         mtime = time.strftime(
@@ -379,7 +383,20 @@ def get_output_file_path(opts: AppOptions) -> Path:
         )
     else:
         name = opts.outfilename
-    return Path(opts.outdir) / name
+
+    outfile = Path(opts.outdir) / name
+
+    print("Writing '{}'.".format(outfile))
+
+    if outfile.exists():
+        if opts.do_overwrite:
+            app_log.write("Overwrite existing file.")
+            outfile.unlink()
+        else:
+            sys.stderr.write("\nCannot replace existing output file.\n")
+            sys.exit(1)
+
+    return outfile
 
 
 def get_percent_complete(completed, total):
@@ -390,33 +407,23 @@ def get_percent_complete(completed, total):
     pct = completed / total
     #  Do not return 100% because, for large input values, the result may
     #  display as 100% well before the process is finished.
-    if pct > 0.999:
+    if pct > 0.999:  # noqa: PLR2004
         return pct, "99.9%"
     return (pct, "{:0.1%}".format(pct))
 
 
-def get_est_finish(pct_complete):
-    if pct_complete == 0.0:
+def get_est_finish(pct_complete, start_dt):
+    if pct_complete == 0.0:  # noqa: PLR2004
         return "(?)"
     now_dt = datetime.now()
     est_done = start_dt + ((now_dt - start_dt) / pct_complete)
     return est_done.strftime("%H:%M:%S")
 
 
-def main(argv):
-    opts = get_opts(argv)
-    global log_file_name
-    log_file_name = opts.log_path
-    has_warnings = False
-
-    write_log("START {} (version {})".format(app_name, app_version))
-    print("\n{} (version {})\n".format(app_name, app_version))
-
-    write_log("SCAN '{0}'".format(opts.scandir))
-    print("Scanning '{0}'.\n".format(opts.scandir))
-
+def get_scan_results(opts: AppOptions) -> tuple[list, int, bool]:
     filelist = []
     total_size = 0
+    scan_has_warnings = False
 
     for this_dir, _, file_names in os.walk(opts.scandir):
         for file_name in file_names:
@@ -425,14 +432,32 @@ def main(argv):
                 filelist.append(str(full_path))
                 total_size += full_path.stat().st_size
             else:
-                has_warnings = True
-                write_log(f"WARNING: Not a valid file: '{full_path}'")
+                scan_has_warnings = True
+                app_log.write(f"WARNING: Not a valid file: '{full_path}'")
 
-    # print("Getting total file size.")
+    return filelist, total_size, scan_has_warnings
 
-    # total_size = sum(os.path.getsize(fn) for fn in filelist)
 
-    write_log("Total size: {:,}".format(total_size))
+    #  The no_log option sets the level to CRITICAL so INFO messages
+    #  are ignored.
+
+
+
+def main(argv):  # noqa: PLR0915
+    opts = get_opts(argv)
+
+    if not opts.no_log:
+        app_log.set_log_path(opts.log_path)
+
+    app_log.write("START {} (version {})".format(app_name, app_version))
+    print("\n{} (version {})\n".format(app_name, app_version))
+
+    app_log.write("SCAN '{0}'".format(opts.scandir))
+    print("Scanning '{0}'.\n".format(opts.scandir))
+
+    filelist, total_size, has_warnings = get_scan_results(opts)
+
+    app_log.write("Total size: {:,}".format(total_size))
     print("  {:,}".format(total_size))
 
     print("Preparing list of files.")
@@ -441,17 +466,7 @@ def main(argv):
     if filelist:
         outfile = get_output_file_path(opts)
 
-        print("Writing '{}'.".format(outfile))
-
-        write_log("Writing '{}'".format(outfile))
-
-        if outfile.exists():
-            if opts.do_overwrite:
-                write_log("Overwrite existing file.")
-                outfile.unlink()
-            else:
-                sys.stderr.write("\nCannot replace existing output file.\n")
-                sys.exit(1)
+        app_log.write("Writing '{}'".format(outfile))
 
         n_files = len(filelist)
 
@@ -467,12 +482,11 @@ def main(argv):
 
         #  Set start_dt here so initial scan time is not included when
         #  calculating the estimated finish time.
-        global start_dt
         start_dt = datetime.now()
 
         for lst_idx, filename in enumerate(filelist, start=1):
             pct, pct_str = get_percent_complete(completed_size, total_size)
-            est = "estimated finish at {}".format(get_est_finish(pct))
+            est = "estimated finish at {}".format(get_est_finish(pct, start_dt))
             print(
                 "[ File {0:,} of {1:,} ({2}) - {3} ]\n{4}".format(
                     lst_idx, n_files, pct_str, est, filename
@@ -526,7 +540,7 @@ def main(argv):
             run_time,
         )
 
-        write_log(msg)
+        app_log.write(msg)
         print("\n{}\n".format(msg))
 
         db_info_finish(con, opts)
@@ -534,10 +548,10 @@ def main(argv):
         con.close()
 
         print("Data written to '{}'.\n".format(outfile))
-        if has_warnings:
-            print("WARNINGS written to '{}'.".format(log_file_name))
+        if has_warnings and not opts.no_log:
+            print("WARNINGS written to '{}'.".format(opts.log_path))
     else:
-        write_log("No files found.")
+        app_log.write("No files found.")
         print("\nNo files found in '{}'.\n".format(opts.scandir))
 
     return 0

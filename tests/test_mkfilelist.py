@@ -55,7 +55,7 @@ def test_get_hashes(test_file_fixture):
 def test_get_file_info(test_file_fixture):
     test_file, sha1sum_result, md5sum_result = test_file_fixture
     opts = AppOptions(
-        str(test_file.parent), None, None, False, 0, "TITLE", None
+        str(test_file.parent), None, None, False, 0, "TITLE", None, True
     )
     file_info = get_file_info(str(test_file), opts)
     assert str(test_file.name) == file_info.file_name

@@ -15,10 +15,11 @@ extend-exclude = ["tests"]
 # flake8-implicit-str-concat (ISC)
 # Perflint (PERF)
 # flake8-use-pathlib (PTH)
+# Pylint (PL)
 # flake8-pyi (PYI)
 # flake8-return (RET)
 # flake8-bandit (S)
 # flake8-simplify (SIM)
 # Warning (W)
-select = ["A", "B", "C4", "E", "F", "FA", "I", "ISC", "PERF", "PTH", "PYI", "RET", "S", "SIM", "W"]
+select = ["A", "B", "C4", "E", "F", "FA", "I", "ISC", "PERF", "PL", "PTH", "PYI", "RET", "S", "SIM", "W"]
 # select = ["ALL"]
