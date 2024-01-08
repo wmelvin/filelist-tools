@@ -1,7 +1,7 @@
-import pytest
-
 from importlib import reload
 from pathlib import Path
+
+import pytest
 
 import filelist_merge
 import mkfilelist
@@ -35,7 +35,7 @@ def path_to_sqlite_dbs(tmpdir_with_files, tmp_path) -> Path:
         f"--name={outdir / 'test_dir1.sqlite'}",
     ]
     result = mkfilelist.main(args)
-    assert 0 == result
+    assert result == 0
 
     args = [
         "mkfilelist.py",
@@ -44,7 +44,7 @@ def path_to_sqlite_dbs(tmpdir_with_files, tmp_path) -> Path:
         f"--name={outdir / 'test_dir2.sqlite'}",
     ]
     result = mkfilelist.main(args)
-    assert 0 == result
+    assert result == 0
 
     args = [
         "mkfilelist.py",
@@ -53,7 +53,7 @@ def path_to_sqlite_dbs(tmpdir_with_files, tmp_path) -> Path:
         f"--name={outdir / 'test_dir3.sqlite'}",
     ]
     result = mkfilelist.main(args)
-    assert 0 == result
+    assert result == 0
 
     return outdir
 
@@ -90,9 +90,7 @@ def test_merge_three_dbs(path_to_sqlite_dbs):
     test_output = Path.cwd() / "output_from_test"
     if not test_output.exists():
         test_output.mkdir()
-    (test_output / "test_merge_three_dbs.txt").write_text(
-        f"{dbs_path}\n"
-    )
+    (test_output / "test_merge_three_dbs.txt").write_text(f"{dbs_path}\n")
 
     dbfiles = list(dbs_path.glob("*.sqlite"))
     assert len(dbfiles) == 3, "Should be 3 *.sqlite files."
@@ -143,7 +141,7 @@ def test_merge_and_append(path_to_sqlite_dbs):
         str(dbs_path),
         "--name",
         "test_merge_and_append.sqlite",
-        "--append"
+        "--append",
     ]
     result = filelist_merge.main(args)
     assert result == 0

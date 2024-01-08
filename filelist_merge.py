@@ -12,7 +12,7 @@ from typing import NamedTuple
 
 app_name = Path(__file__).name
 
-app_version = "2024.01.1"
+app_version = "2024.01.2"
 
 run_dt = datetime.now()
 
@@ -239,8 +239,7 @@ def insert_filelist(
 
 def get_args(argv):
     ap = argparse.ArgumentParser(
-        description="Merges two or more SQLite databases created by "
-        "mkfilelist.py.\n"
+        description="Merges two or more SQLite databases created by " "mkfilelist.py.\n"
     )
 
     ap.add_argument(
@@ -298,15 +297,10 @@ def get_args(argv):
     return ap.parse_args(argv[1:])
 
 
-def get_opts(argv):
-    args = get_args(argv)
+def get_src_dbs(source_files: list[str]) -> list[tuple[Path, str]]:
+    src_dbs = []  # (filename, tag).
 
-    if not args.source_files:
-        raise SystemExit("No source files specified.")
-
-    src_dbs: list[tuple[Path, str]] = []  # (filename, tag).
-
-    for src in args.source_files:
+    for src in source_files:
         #  Tag may be included in arg as 'filename,tag'.
         src_parts = src.split(",")
 
@@ -321,6 +315,17 @@ def get_opts(argv):
             src_dbs.append((src_path, src_parts[1]))
         else:
             raise SystemExit("Invalid file name and tag (too many commas).")
+
+    return src_dbs
+
+
+def get_opts(argv):
+    args = get_args(argv)
+
+    if not args.source_files:
+        raise SystemExit("No source files specified.")
+
+    src_dbs = get_src_dbs(args.source_files)
 
     if args.outdir:
         outpath = Path(args.outdir)
@@ -349,9 +354,7 @@ def get_opts(argv):
             run_dt.strftime("%Y%m%d_%H%M%S")
         )
 
-    return AppOptions(
-        src_dbs, outpath, outfilename, args.do_overwrite, args.do_append
-    )
+    return AppOptions(src_dbs, outpath, outfilename, args.do_overwrite, args.do_append)
 
 
 def main(argv):
@@ -362,9 +365,7 @@ def main(argv):
     output_path: Path = opts.outpath / opts.outfilename
 
     print(
-        "{} '{}'.".format(
-            ("Appending" if opts.do_append else "Writing"), output_path
-        )
+        "{} '{}'.".format(("Appending" if opts.do_append else "Writing"), output_path)
     )
 
     if output_path.exists():

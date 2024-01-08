@@ -11,7 +11,7 @@ from typing import NamedTuple
 app_name = Path(__file__).name
 
 #  calver YYYY.0M.MICRO
-app_version = "2024.01.1"
+app_version = "2024.01.2"
 
 
 class AppOptions(NamedTuple):
@@ -24,8 +24,7 @@ class AppOptions(NamedTuple):
 
 def get_args(argv):
     ap = argparse.ArgumentParser(
-        description="Export data from a SQLite database created by "
-        "'mkfilelist.py'."
+        description="Export data from a SQLite database created by " "'mkfilelist.py'."
     )
 
     ap.add_argument(
@@ -87,9 +86,7 @@ def get_opts(argv) -> AppOptions:
         sys.stderr.write(f"\nERROR: Directory not found: '{out_path}'\n")
         sys.exit(1)
 
-    return AppOptions(
-        db_path, out_path, args.do_fullname, args.do_alt, args.do_dfn
-    )
+    return AppOptions(db_path, out_path, args.do_fullname, args.do_alt, args.do_dfn)
 
 
 def get_db_info(con: sqlite3.Connection):
@@ -165,8 +162,7 @@ def export_fullname_csv(db_info, out_path: Path, con: sqlite3.Connection):
     cur = con.cursor()
 
     stmt = (
-        "SELECT dir_name, file_name FROM view_filelist "
-        "ORDER BY dir_name, file_name"
+        "SELECT dir_name, file_name FROM view_filelist " "ORDER BY dir_name, file_name"
     )
 
     with fp.open("w") as f:
@@ -251,8 +247,7 @@ def export_filelist_alt_csv(db_info, out_path: Path, con: sqlite3.Connection):
             full_name = "{}{}{}".format(row[i_dir_name], sep, row[i_file_name])
             file_ext = Path(row[i_file_name]).suffix
             f.write(
-                '"{}","{}","{}","{}","{}","{}","{}","{}","{}","{}",'
-                '"{}"\n'.format(
+                '"{}","{}","{}","{}","{}","{}","{}","{}","{}","{}",' '"{}"\n'.format(
                     key,
                     row[i_sha1],
                     row[i_file_name],
@@ -307,8 +302,7 @@ def export_filelist_dfn_csv(db_info, out_path: Path, con: sqlite3.Connection):
 
     with fp.open("w") as f:
         f.write(
-            '"DirName","FileName","LastModified","Size","SHA1",'
-            '"Level","Error"\n'
+            '"DirName","FileName","LastModified","Size","SHA1",' '"Level","Error"\n'
         )
         for row in cur.execute(stmt):
             f.write(

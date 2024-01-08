@@ -1,22 +1,23 @@
-import pytest
+from __future__ import annotations
 
 from pathlib import Path
-from typing import Tuple
+
+import pytest
 
 from mkfilelist import (
+    AppOptions,
     get_args,
-    get_opts,
-    get_hashes,
     get_file_info,
+    get_hashes,
+    get_opts,
     get_output_file_path,
     get_percent_complete,
-    AppOptions,
     main,
 )
 
 
 @pytest.fixture(scope="session")
-def test_file_fixture(tmp_path_factory) -> Tuple[Path, str, str]:
+def test_file_fixture(tmp_path_factory) -> tuple[Path, str, str]:
     """
     Creates a file, in a temporary directory, with specific binary content.
 
@@ -49,14 +50,12 @@ def test_get_hashes(test_file_fixture):
     sha1, md5, err = get_hashes(test_file)
     assert sha1sum_result == sha1
     assert md5sum_result == md5
-    assert "" == err
+    assert err == ""
 
 
 def test_get_file_info(test_file_fixture):
     test_file, sha1sum_result, md5sum_result = test_file_fixture
-    opts = AppOptions(
-        str(test_file.parent), None, None, False, 0, "TITLE", None, True
-    )
+    opts = AppOptions(str(test_file.parent), None, None, False, 0, "TITLE", None, True)
     file_info = get_file_info(str(test_file), opts)
     assert str(test_file.name) == file_info.file_name
     assert str(test_file.parent) == file_info.dir_name
@@ -67,8 +66,8 @@ def test_get_file_info(test_file_fixture):
 def test_get_args():
     args = ["mkfilelist.py", "DIRPATH", "TITLE"]
     result = get_args(args)
-    assert "DIRPATH" == result.scandir
-    assert "TITLE" == result.title
+    assert result.scandir == "DIRPATH"
+    assert result.title == "TITLE"
 
 
 def test_path_not_found(capsys):
@@ -88,7 +87,7 @@ def test_get_opts(test_file_fixture):
     ]
     opts: AppOptions = get_opts(args)
     assert opts.scandir == str(test_file_fixture[0].parent)
-    assert 0 == opts.dirname_start
+    assert opts.dirname_start == 0
     assert Path(opts.outfilename).name == "TestFileList.sqlite"
     assert opts.do_overwrite is False
 
@@ -121,7 +120,7 @@ def test_main_runs(tmp_path):
     scandir.mkdir()  # Dir exists, but no files.
     args = ["mkfilelist.py", str(scandir), "TITLE"]
     result = main(args)
-    assert 0 == result
+    assert result == 0
 
 
 def test_output_dir_arg(tmp_path):
@@ -167,7 +166,7 @@ def test_creates_sqlite_db(tmpdir_with_files, tmp_path):
     )
 
     result = main(args)
-    assert 0 == result
+    assert result == 0
     dbfiles = list(outdir.glob("*.sqlite"))
     assert dbfiles, "Should create a .sqlite file in the output directory."
     assert (outdir / "mkfilelist.log").exists(), "Should make a log file."
@@ -185,7 +184,7 @@ def test_w_trim_parent_option(tmpdir_with_files, tmp_path):
         "--no-log",
     ]
     result = main(args)
-    assert 0 == result
+    assert result == 0
     dbfiles = list(outdir.glob("*.sqlite"))
     assert dbfiles, "Should create a .sqlite file in the output directory."
     assert not (
@@ -228,14 +227,13 @@ def test_specify_output_filename(tmpdir_with_files, tmp_path, capsys):
         "--name=TestFilelist.sqlite",
     ]
     result = main(args)
-    assert 0 == result
+    assert result == 0
 
     dbfiles = list(outdir.glob("*.sqlite"))
 
     assert len(dbfiles) == 1, "Should create one .sqlite file."
 
-    assert "TestFilelist.sqlite" == dbfiles[0].name, \
-        "Should use specified file name."
+    assert dbfiles[0].name == "TestFilelist.sqlite", "Should use specified file name."
 
     #  Running again should raise a SystemExit because the output
     #  file already exists.
@@ -252,7 +250,7 @@ def test_specify_output_filename(tmpdir_with_files, tmp_path, capsys):
         f"--output-to={outdir}",
         "-t",
         "--name=TestFilelist.sqlite",
-        "--force"
+        "--force",
     ]
     result = main(args)
-    assert 0 == result, "Should succeed replacing previous output file."
+    assert result == 0, "Should succeed replacing previous output file."

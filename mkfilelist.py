@@ -26,7 +26,7 @@ class AppOptions(NamedTuple):
     scandir: str
     outdir: str
     outfilename: str
-    do_overwrite : bool
+    do_overwrite: bool
     dirname_start: int
     title: str
     log_path: str
@@ -233,9 +233,7 @@ def get_file_info(file_name: str, opts: AppOptions):
     if len(err_str) == 0:
         filesize = file_stat.st_size
 
-        mtime = time.strftime(
-            "%Y-%m-%d %H:%M:%S", time.localtime(file_stat.st_mtime)
-        )
+        mtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(file_stat.st_mtime))
 
         if filesize == 0:
             err_str = "(empty file)"
@@ -244,9 +242,7 @@ def get_file_info(file_name: str, opts: AppOptions):
 
         dir_level = dir_name.count(os.path.sep)
 
-    return FileInfo(
-        p.name, dir_name, dir_level, sha1, md5, filesize, mtime, err_str
-    )
+    return FileInfo(p.name, dir_name, dir_level, sha1, md5, filesize, mtime, err_str)
 
 
 def run_sql(cur: sqlite3.Cursor, stmt: str, data=None):
@@ -437,10 +433,8 @@ def get_scan_results(opts: AppOptions) -> tuple[list, int, bool]:
 
     return filelist, total_size, scan_has_warnings
 
-
     #  The no_log option sets the level to CRITICAL so INFO messages
     #  are ignored.
-
 
 
 def main(argv):  # noqa: PLR0915
@@ -531,9 +525,8 @@ def main(argv):  # noqa: PLR0915
         run_time = datetime.now() - run_dt
 
         msg = (
-                "Finished at {0} (100%): {1:,} files, {2:,} bytes. "
-                "Run time {3}"
-            ).format(
+            "Finished at {0} (100%): {1:,} files, {2:,} bytes. " "Run time {3}"
+        ).format(
             datetime.now().strftime("%H:%M:%S"),
             n_files,
             completed_size,

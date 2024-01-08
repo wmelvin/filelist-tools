@@ -1,11 +1,9 @@
-
 from pathlib import Path
 
 import pytest
 
 import filelist_export
 import mkfilelist
-
 
 
 def test_get_opts(tmp_path):
@@ -28,28 +26,24 @@ def test_main(tmp_path):
     print(f"\n{out_path=}")
 
     args1 = ["mkfilelist.py", str(scan_path), "test_main", "-o", str(out_path)]
-    assert 0 == mkfilelist.main(args1)
+    assert mkfilelist.main(args1) == 0
 
     db_files = list(out_path.glob("*.sqlite"))
-    assert 1 == len(db_files), "mkfilelist.py should make one .sqlite file."
+    assert len(db_files) == 1, "mkfilelist.py should make one .sqlite file."
 
     db_file = str(db_files[0])
 
     args2 = ["filelist_export.py", db_file, f"--output-to={out_path}"]
     result = filelist_export.main(args2)
-    assert 0 == result
+    assert result == 0
 
     csv_files = list(out_path.glob("*.csv"))
-    assert 1 == len(csv_files), "Should make one .csv file."
+    assert len(csv_files) == 1, "Should make one .csv file."
 
 
 def test_bad_file_name(tmp_path, capsys):
     bad_filename = str(tmp_path / "im-not-here.sqlite")
-    args = [
-        "filelist_export.py",
-        bad_filename,
-        f"--output-to={tmp_path}"
-    ]
+    args = ["filelist_export.py", bad_filename, f"--output-to={tmp_path}"]
     with pytest.raises(SystemExit):
         filelist_export.main(args)
 
@@ -60,19 +54,13 @@ def test_bad_file_name(tmp_path, capsys):
 
 def test_bad_output_dir_name(tmp_path: Path, capsys):
     fake_db = tmp_path / "fake.db"
-    fake_db.write_text(
-        "Not really a database, but that shouldn't matter here."
-    )
+    fake_db.write_text("Not really a database, but that shouldn't matter here.")
     assert fake_db.exists()
 
     bad_out_dir = tmp_path / "im-not-here"
     assert not bad_out_dir.exists()
 
-    args = [
-        "filelist_export.py",
-        str(fake_db),
-        f"--output-to={str(bad_out_dir)}"
-    ]
+    args = ["filelist_export.py", str(fake_db), f"--output-to={str(bad_out_dir)}"]
     with pytest.raises(SystemExit):
         filelist_export.main(args)
 
