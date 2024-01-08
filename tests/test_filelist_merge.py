@@ -29,7 +29,6 @@ def path_to_sqlite_dbs(tmpdir_with_files, tmp_path) -> Path:
     assert dir3.exists()
 
     args = [
-        "mkfilelist.py",
         str(dir1),
         "test_dir1",
         f"--name={outdir / 'test_dir1.sqlite'}",
@@ -38,7 +37,6 @@ def path_to_sqlite_dbs(tmpdir_with_files, tmp_path) -> Path:
     assert result == 0
 
     args = [
-        "mkfilelist.py",
         str(dir2),
         "test_dir2",
         f"--name={outdir / 'test_dir2.sqlite'}",
@@ -47,7 +45,6 @@ def path_to_sqlite_dbs(tmpdir_with_files, tmp_path) -> Path:
     assert result == 0
 
     args = [
-        "mkfilelist.py",
         str(dir3),
         "test_dir3",
         f"--name={outdir / 'test_dir3.sqlite'}",
@@ -71,7 +68,6 @@ def test_merge_two_dbs(path_to_sqlite_dbs):
     assert len(dbfiles) == 3, "Should be 3 *.sqlite files."
     dbfiles.sort()
     args = [
-        "filelist_merge.py",
         str(dbfiles[0]),
         str(dbfiles[1]),
         "-o",
@@ -97,7 +93,6 @@ def test_merge_three_dbs(path_to_sqlite_dbs):
     dbfiles.sort()
 
     args = [
-        "filelist_merge.py",
         str(dbfiles[0]),
         str(dbfiles[1]),
         str(dbfiles[2]),
@@ -120,7 +115,6 @@ def test_merge_and_append(path_to_sqlite_dbs):
     dbfiles.sort()
 
     args = [
-        "filelist_merge.py",
         str(dbfiles[0]),
         str(dbfiles[1]),
         "-o",
@@ -135,7 +129,6 @@ def test_merge_and_append(path_to_sqlite_dbs):
     reload(filelist_merge)
 
     args = [
-        "filelist_merge.py",
         str(dbfiles[2]),
         "-o",
         str(dbs_path),
@@ -154,7 +147,6 @@ def test_merge_and_append(path_to_sqlite_dbs):
 #     dbfiles.sort()
 
 #     args = [
-#         "filelist_merge.py",
 #         str(dbfiles[0]),
 #         "--append"
 #     ]

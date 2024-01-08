@@ -22,7 +22,7 @@ class AppOptions(NamedTuple):
     do_dfn: bool
 
 
-def get_args(argv):
+def get_args(arglist=None):
     ap = argparse.ArgumentParser(
         description="Export data from a SQLite database created by " "'mkfilelist.py'."
     )
@@ -67,11 +67,11 @@ def get_args(argv):
         "first two columns.",
     )
 
-    return ap.parse_args(argv[1:])
+    return ap.parse_args(arglist)
 
 
-def get_opts(argv) -> AppOptions:
-    args = get_args(argv)
+def get_opts(arglist=None) -> AppOptions:
+    args = get_args(arglist)
 
     db_path = Path(args.db_file)
 
@@ -320,11 +320,10 @@ def export_filelist_dfn_csv(db_info, out_path: Path, con: sqlite3.Connection):
     cur.close()
 
 
-def main(argv):
+def main(arglist=None):
     print("\n{} (version {})\n".format(app_name, app_version))
 
-    # db_path, out_path, do_fullname, do_alt, do_dfn = get_args(argv)
-    opts = get_opts(argv)
+    opts = get_opts(arglist)
 
     print("Reading '{}'.".format(opts.db_path))
 
@@ -355,4 +354,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    main()

@@ -237,7 +237,7 @@ def insert_filelist(
     create_view_for_filelist(dst_con, filelist_id)
 
 
-def get_args(argv):
+def get_args(arglist=None):
     ap = argparse.ArgumentParser(
         description="Merges two or more SQLite databases created by " "mkfilelist.py.\n"
     )
@@ -294,7 +294,7 @@ def get_args(argv):
         "parameter.",
     )
 
-    return ap.parse_args(argv[1:])
+    return ap.parse_args(arglist)
 
 
 def get_src_dbs(source_files: list[str]) -> list[tuple[Path, str]]:
@@ -319,8 +319,8 @@ def get_src_dbs(source_files: list[str]) -> list[tuple[Path, str]]:
     return src_dbs
 
 
-def get_opts(argv):
-    args = get_args(argv)
+def get_opts(arglist=None):
+    args = get_args(arglist)
 
     if not args.source_files:
         raise SystemExit("No source files specified.")
@@ -357,10 +357,10 @@ def get_opts(argv):
     return AppOptions(src_dbs, outpath, outfilename, args.do_overwrite, args.do_append)
 
 
-def main(argv):
+def main(arglist=None):
     print("\n{} (version {})\n".format(app_name, app_version))
 
-    opts = get_opts(argv)
+    opts = get_opts(arglist)
 
     output_path: Path = opts.outpath / opts.outfilename
 
@@ -402,4 +402,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    main()

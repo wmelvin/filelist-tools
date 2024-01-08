@@ -64,14 +64,14 @@ def test_get_file_info(test_file_fixture):
 
 
 def test_get_args():
-    args = ["mkfilelist.py", "DIRPATH", "TITLE"]
+    args = ["DIRPATH", "TITLE"]
     result = get_args(args)
     assert result.scandir == "DIRPATH"
     assert result.title == "TITLE"
 
 
 def test_path_not_found(capsys):
-    args = ["mkfilelist.py", "badpath", "TITLE"]
+    args = ["badpath", "TITLE"]
     with pytest.raises(SystemExit):
         get_opts(args)
     assert "Path not found" in capsys.readouterr().err
@@ -79,7 +79,6 @@ def test_path_not_found(capsys):
 
 def test_get_opts(test_file_fixture):
     args = [
-        "mkfilelist.py",
         str(test_file_fixture[0].parent),
         "TITLE",
         "--name",
@@ -96,7 +95,6 @@ def test_file_info_from_args_w_trim_parent(test_file_fixture):
     test_file, sha1sum_result, md5sum_result = test_file_fixture
 
     args = [
-        "mkfilelist.py",
         str(test_file_fixture[0].parent),
         "TITLE",
         "--trim-parent",
@@ -118,7 +116,7 @@ def test_file_info_from_args_w_trim_parent(test_file_fixture):
 def test_main_runs(tmp_path):
     scandir = tmp_path / "scanme"
     scandir.mkdir()  # Dir exists, but no files.
-    args = ["mkfilelist.py", str(scandir), "TITLE"]
+    args = [str(scandir), "TITLE"]
     result = main(args)
     assert result == 0
 
@@ -131,11 +129,11 @@ def test_output_dir_arg(tmp_path):
     outdir.mkdir()
     outdir = str(outdir)
 
-    args = ["mkfilelist.py", scandir, "TITLE", "--output-to", outdir]
+    args = [scandir, "TITLE", "--output-to", outdir]
     opts = get_opts(args)
     assert outdir == opts.outdir
 
-    args = ["mkfilelist.py", scandir, "TITLE", "-o", outdir]
+    args = [scandir, "TITLE", "-o", outdir]
     opts = get_opts(args)
     assert outdir == opts.outdir
 
@@ -149,7 +147,6 @@ def test_creates_sqlite_db(tmpdir_with_files, tmp_path):
         test_output.mkdir()
 
     args = [
-        "mkfilelist.py",
         str(tmpdir_with_files),
         "test_creates_sqlite_db",
         f"--output-to={outdir}",
@@ -176,7 +173,6 @@ def test_w_trim_parent_option(tmpdir_with_files, tmp_path):
     outdir = tmp_path / "output"
     outdir.mkdir()
     args = [
-        "mkfilelist.py",
         str(tmpdir_with_files),
         "test_w_trim_parent_option",
         f"--output-to={outdir}",
@@ -219,7 +215,6 @@ def test_specify_output_filename(tmpdir_with_files, tmp_path, capsys):
     outdir.mkdir()
     scan_dir = str(tmpdir_with_files)
     args = [
-        "mkfilelist.py",
         scan_dir,
         "test_specify_output_filename",
         f"--output-to={outdir}",
@@ -244,7 +239,6 @@ def test_specify_output_filename(tmpdir_with_files, tmp_path, capsys):
 
     #  Add the --force option and run again.
     args = [
-        "mkfilelist.py",
         scan_dir,
         "test_specify_output_filename",
         f"--output-to={outdir}",

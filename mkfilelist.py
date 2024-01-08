@@ -66,7 +66,7 @@ run_dt = datetime.now()
 app_log = AppLogFile()
 
 
-def get_args(argv):
+def get_args(arglist=None):
     ap = argparse.ArgumentParser(
         description="Scans a specified directory path and creates a SQLite "
         "database containing some basic information about each file: "
@@ -132,11 +132,11 @@ def get_args(argv):
         help="Do not create a log file.",
     )
 
-    return ap.parse_args(argv[1:])
+    return ap.parse_args(arglist)
 
 
-def get_opts(argv):
-    args = get_args(argv)
+def get_opts(arglist=None):
+    args = get_args(arglist)
 
     if not Path(args.scandir).exists():
         sys.stderr.write(f"\nPath not found (scandir): {args.scandir}\n")
@@ -437,8 +437,8 @@ def get_scan_results(opts: AppOptions) -> tuple[list, int, bool]:
     #  are ignored.
 
 
-def main(argv):  # noqa: PLR0915
-    opts = get_opts(argv)
+def main(arglist=None):  # noqa: PLR0915
+    opts = get_opts(arglist)
 
     if not opts.no_log:
         app_log.set_log_path(opts.log_path)
@@ -551,4 +551,4 @@ def main(argv):  # noqa: PLR0915
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    main()

@@ -9,7 +9,7 @@ import mkfilelist
 def test_get_opts(tmp_path):
     fake_db: Path = tmp_path / "fake.sqlite"
     fake_db.write_text("That's no database.")
-    args = ["filelist_export.py", str(fake_db)]
+    args = [str(fake_db)]
     opts = filelist_export.get_opts(args)
     assert isinstance(opts.db_path, Path)
     assert isinstance(opts.out_path, Path)
@@ -25,7 +25,7 @@ def test_main(tmp_path):
 
     print(f"\n{out_path=}")
 
-    args1 = ["mkfilelist.py", str(scan_path), "test_main", "-o", str(out_path)]
+    args1 = [str(scan_path), "test_main", "-o", str(out_path)]
     assert mkfilelist.main(args1) == 0
 
     db_files = list(out_path.glob("*.sqlite"))
@@ -33,7 +33,7 @@ def test_main(tmp_path):
 
     db_file = str(db_files[0])
 
-    args2 = ["filelist_export.py", db_file, f"--output-to={out_path}"]
+    args2 = [db_file, f"--output-to={out_path}"]
     result = filelist_export.main(args2)
     assert result == 0
 
@@ -43,7 +43,7 @@ def test_main(tmp_path):
 
 def test_bad_file_name(tmp_path, capsys):
     bad_filename = str(tmp_path / "im-not-here.sqlite")
-    args = ["filelist_export.py", bad_filename, f"--output-to={tmp_path}"]
+    args = [bad_filename, f"--output-to={tmp_path}"]
     with pytest.raises(SystemExit):
         filelist_export.main(args)
 
@@ -60,7 +60,7 @@ def test_bad_output_dir_name(tmp_path: Path, capsys):
     bad_out_dir = tmp_path / "im-not-here"
     assert not bad_out_dir.exists()
 
-    args = ["filelist_export.py", str(fake_db), f"--output-to={str(bad_out_dir)}"]
+    args = [str(fake_db), f"--output-to={str(bad_out_dir)}"]
     with pytest.raises(SystemExit):
         filelist_export.main(args)
 
