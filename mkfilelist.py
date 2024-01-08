@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+""" Scan a directory tree and create a SQLite database containing some basic
+information about each file: File name, Directory path, Last Modified
+timestamp, Size, SHA1 and MD5 hashes.
+"""
 
 from __future__ import annotations
 
@@ -23,6 +28,8 @@ db_version = 1
 
 
 class AppOptions(NamedTuple):
+    """Application options."""
+
     scandir: str
     outdir: str
     outfilename: str
@@ -34,6 +41,8 @@ class AppOptions(NamedTuple):
 
 
 class FileInfo(NamedTuple):
+    """File information."""
+
     file_name: str
     dir_name: str
     dir_level: int
@@ -45,13 +54,18 @@ class FileInfo(NamedTuple):
 
 
 class AppLogFile:
+    """Application log file."""
+
     def __init__(self) -> None:
+        """Initialize the AppLogFile object. Set the log path to None."""
         self.log_path: Path | None = None
 
     def set_log_path(self, log_path: Path):
+        """Set the log path to enable logging."""
         self.log_path = log_path
 
     def write(self, message: str):
+        """Write a message to the log file, unless the log path is None."""
         if self.log_path is None:
             return
         with self.log_path.open("a") as f:
@@ -67,6 +81,11 @@ app_log = AppLogFile()
 
 
 def get_args(arglist=None):
+    """Get command line arguments.
+
+    :param arglist: List of command line arguments.
+    :return: argparse.Namespace
+    """
     ap = argparse.ArgumentParser(
         description="Scans a specified directory path and creates a SQLite "
         "database containing some basic information about each file: "
@@ -135,7 +154,12 @@ def get_args(arglist=None):
     return ap.parse_args(arglist)
 
 
-def get_opts(arglist=None):
+def get_opts(arglist=None) -> AppOptions:
+    """Get command line arguments and validate them.
+
+    :param arglist: List of command line arguments.
+    :return: AppOptions
+    """
     args = get_args(arglist)
 
     if not Path(args.scandir).exists():
@@ -186,9 +210,14 @@ def get_opts(arglist=None):
     )
 
 
-def get_hashes(file_name: str):
-    """
-    Returns a tuple as (sha1, md5, err):.
+def get_hashes(file_name: str) -> tuple[str, str, str]:
+    """Get SHA1 and MD5 hashes for a file.
+
+    :param file_name: Name of file to hash.
+
+    :return: tuple(sha1, md5, err):.
+    sha1 and md5 are empty strings if an error occurs.
+    err is an empty string if no error occurs.
     """
     BUFFER_SIZE = 65535
     md5 = hashlib.md5()  # noqa: S324
@@ -210,7 +239,15 @@ def get_hashes(file_name: str):
     return hashes
 
 
-def get_file_info(file_name: str, opts: AppOptions):
+def get_file_info(file_name: str, opts: AppOptions) -> FileInfo:
+    """Get file information.
+
+    :param file_name: Name of file to get information for.
+    :param opts: AppOptions
+
+    :return: FileInfo
+    """
+
     assert isinstance(file_name, str)  # noqa: S101
     filesize = 0
     mtime = 0
@@ -246,6 +283,12 @@ def get_file_info(file_name: str, opts: AppOptions):
 
 
 def run_sql(cur: sqlite3.Cursor, stmt: str, data=None):
+    """Run an SQL statement.
+
+    :param cur: sqlite3.Cursor
+    :param stmt: SQL statement to run.
+    :param data: Data to pass to the SQL statement.
+    """
     try:
         if data:
             cur.execute(stmt, data)
@@ -257,6 +300,10 @@ def run_sql(cur: sqlite3.Cursor, stmt: str, data=None):
 
 
 def create_tables_and_views(con: sqlite3.Connection):
+    """Create tables and views in the database.
+
+    :param con: sqlite3.Connection
+    """
     cur = con.cursor()
 
     print("Creating table 'db_info'.")
@@ -333,6 +380,12 @@ def create_tables_and_views(con: sqlite3.Connection):
 
 
 def db_info_start(con: sqlite3.Connection, opts: AppOptions):
+    """Write data to the db_info table at the start of the run.
+
+    :param con: sqlite3.Connection
+    :param opts: AppOptions
+    """
+
     print("Writing table 'db_info'.")
     cur = con.cursor()
     data = (
@@ -354,6 +407,11 @@ def db_info_start(con: sqlite3.Connection, opts: AppOptions):
 
 
 def db_info_finish(con: sqlite3.Connection, opts: AppOptions):
+    """Write data to the db_info table at the end of the run.
+
+    :param con: sqlite3.Connection
+    :param opts: AppOptions
+    """
     print("Updating table 'db_info'.")
     key = run_dt.strftime("%Y-%m-%d %H:%M:%S")
     dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -365,6 +423,12 @@ def db_info_finish(con: sqlite3.Connection, opts: AppOptions):
 
 
 def db_add_directory(cur: sqlite3.Cursor, dir_id: int, dir_path: str):
+    """Add a directory to the directories table.
+
+    :param cur: sqlite3.Cursor
+    :param dir_id: ID for the directory.
+    :param dir_path: Path to the directory.
+    """
     run_sql(
         cur,
         "INSERT INTO directories VALUES (?, ?)",
@@ -373,6 +437,18 @@ def db_add_directory(cur: sqlite3.Cursor, dir_id: int, dir_path: str):
 
 
 def get_output_file_path(opts: AppOptions) -> Path:
+    """Get the path to the output file.
+
+    :param opts: AppOptions
+    :return: Path to the output file.
+
+    If opts.outfilename is None, the output file is named using the title
+    and a current date_time tag.
+
+    If opts.overwrite is True, an existing output file will be overwritten.
+    Otherwise, an existing output file will not be overwritten and an error
+    will be raised.
+    """
     if opts.outfilename is None:
         name = "FileListDb-{0}-{1}.sqlite".format(
             opts.title, run_dt.strftime("%Y%m%d_%H%M%S")
@@ -395,20 +471,35 @@ def get_output_file_path(opts: AppOptions) -> Path:
     return outfile
 
 
-def get_percent_complete(completed, total):
+def get_percent_complete(completed: int, total: int) -> tuple[float, str]:
+    """Get percent complete as a float and a string.
+
+    :param completed: Number of bytes completed.
+    :param total: Total number of bytes to complete.
+
+    :return: tuple(pct, pct_str)
+
+    Will not return 100% because, for large input values, the result may
+    display as 100% well before the process is finished.
+    """
     if total < 1:
         return (0.0, "(?)")
     if completed < 1:
         return (0.0, "0%")
     pct = completed / total
-    #  Do not return 100% because, for large input values, the result may
-    #  display as 100% well before the process is finished.
     if pct > 0.999:  # noqa: PLR2004
         return pct, "99.9%"
     return (pct, "{:0.1%}".format(pct))
 
 
-def get_est_finish(pct_complete, start_dt):
+def get_est_finish(pct_complete: float, start_dt: datetime) -> str:
+    """Get estimated finish time.
+
+    :param pct_complete: Percent complete as a float.
+    :param start_dt: Datetime when the process started.
+
+    :return: Estimated finish time as a string.
+    """
     if pct_complete == 0.0:  # noqa: PLR2004
         return "(?)"
     now_dt = datetime.now()
@@ -417,6 +508,12 @@ def get_est_finish(pct_complete, start_dt):
 
 
 def get_scan_results(opts: AppOptions) -> tuple[list, int, bool]:
+    """Get the results of scanning the specified directory tree.
+
+    :param opts: AppOptions
+
+    :return: tuple(filelist, total_size, scan_has_warnings)
+    """
     filelist = []
     total_size = 0
     scan_has_warnings = False
@@ -433,11 +530,36 @@ def get_scan_results(opts: AppOptions) -> tuple[list, int, bool]:
 
     return filelist, total_size, scan_has_warnings
 
-    #  The no_log option sets the level to CRITICAL so INFO messages
-    #  are ignored.
+
+def db_add_file_info(cur: sqlite3.Cursor, fileinfo: FileInfo, dirs: dict, lst_idx: int):
+    data = (
+        lst_idx,
+        fileinfo.sha1,
+        fileinfo.md5,
+        fileinfo.file_name,
+        fileinfo.size,
+        fileinfo.mtime,
+        fileinfo.dir_level,
+        dirs[fileinfo.dir_name],
+        fileinfo.err,
+    )
+
+    stmt = "INSERT INTO files VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+
+    run_sql(cur, stmt, data)
 
 
 def main(arglist=None):  # noqa: PLR0915
+    """Main function.
+
+    Gets command line arguments, scans the specified directory tree,
+    and creates a SQLite database containing some basic information about
+    each file: File name, Directory path, Last Modified timestamp, Size,
+    SHA1 and MD5 hashes.
+
+    :param arglist: List of command line arguments. Optional.
+    """
+
     opts = get_opts(arglist)
 
     if not opts.no_log:
@@ -480,7 +602,9 @@ def main(arglist=None):  # noqa: PLR0915
 
         for lst_idx, filename in enumerate(filelist, start=1):
             pct, pct_str = get_percent_complete(completed_size, total_size)
+
             est = "estimated finish at {}".format(get_est_finish(pct, start_dt))
+
             print(
                 "[ File {0:,} of {1:,} ({2}) - {3} ]\n{4}".format(
                     lst_idx, n_files, pct_str, est, filename
@@ -496,21 +620,7 @@ def main(arglist=None):  # noqa: PLR0915
                 dirs[fileinfo.dir_name] = dir_id
                 db_add_directory(cur, dir_id, fileinfo.dir_name)
 
-            data = (
-                lst_idx,
-                fileinfo.sha1,
-                fileinfo.md5,
-                fileinfo.file_name,
-                fileinfo.size,
-                fileinfo.mtime,
-                fileinfo.dir_level,
-                dirs[fileinfo.dir_name],
-                fileinfo.err,
-            )
-
-            stmt = "INSERT INTO files VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-
-            run_sql(cur, stmt, data)
+            db_add_file_info(cur, fileinfo, dirs, lst_idx)
 
             #  Commit along the way when doing a large number of files.
             #  No need for rollback.

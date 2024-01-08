@@ -22,7 +22,7 @@ select = [
     "SIM",  # flake8-simplify
     "W"     # Warning
 ]
-# select = ["ALL"]
+# extend-select = ["ALL"]
 ignore = [
     "ISC001",  # single-line-implicit-string-concatenation
     "PLR2004", # magic value
