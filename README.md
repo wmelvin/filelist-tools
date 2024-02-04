@@ -28,7 +28,7 @@ positional arguments:
   title                 Title to identify the filelist. The title is used in
                         the name of the output file.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -o OUTDIR, --output-to OUTDIR
                         Directory in which to create the output file.
@@ -64,7 +64,7 @@ positional arguments:
                         'mkfilelist.py'. Include the full path to the file
                         unless it is in the current working directory.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -o OUTDIR, --output-to OUTDIR
                         Directory in which to create output files. Optional.
@@ -86,7 +86,7 @@ This utility reads SQLite database files, created by `mkfilelist.py`, and merges
 
 ```
 usage: filelist_merge.py [-h] [-o OUTDIR] [-n OUTFILENAME] [--force] [-a]
-                         [source_files [source_files ...]]
+                         [source_files ...]
 
 Merges two or more SQLite databases created by mkfilelist.py.
 
@@ -100,7 +100,7 @@ positional arguments:
                         after a file name using a comma (with no spaces)
                         followed by the tag (filename,tag).
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -o OUTDIR, --output-to OUTDIR
                         Directory in which to create the output file.
