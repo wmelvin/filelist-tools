@@ -3,8 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
-from mkfilelist import (
+from make_filelist.mkfilelist import (
     AppOptions,
     get_args,
     get_file_info,

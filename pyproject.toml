@@ -15,8 +15,22 @@ authors = [
   { name = "Bill Melvin", email = "bill@billmelvin.com" },
 ]
 
+[project.urls]
+Source = "https://github.com/wmelvin/filelist-tools"
+# Documentation = "https://github.com/wmelvin/filelist-tools#readme"
+# Issues = "https://github.com/wmelvin/filelist-tools/issues"
+
+[project.scripts]
+mkfilelist = "make_filelist:mkfilelist.main"
+filelist_export = "export_filelist:filelist_export.main"
+filelist_merge = "merge_filelist:filelist_merge.main"
+
 [tool.setuptools.dynamic]
 version = {attr = "make_filelist/mkfilelist.__version__"}
 
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
 [tool.pytest.ini_options]
-pythonpath = ["."]
+pythonpath = ["src"]

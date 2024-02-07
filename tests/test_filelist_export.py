@@ -1,9 +1,8 @@
 from pathlib import Path
 
 import pytest
-
-import filelist_export
-import mkfilelist
+from export_filelist import filelist_export
+from make_filelist import mkfilelist
 
 
 def test_get_opts(tmp_path):

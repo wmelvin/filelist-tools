@@ -2,9 +2,8 @@ from importlib import reload
 from pathlib import Path
 
 import pytest
-
-import filelist_merge
-import mkfilelist
+from make_filelist import mkfilelist
+from merge_filelist import filelist_merge
 
 
 def test_filelist_merge():
