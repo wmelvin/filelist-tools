@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "filelist-tools"
+dynamic = ["version"]
+description = 'Tools for making and working with a filelist (an inventory of files in a given location).'
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+keywords = [ "catalog", "filelist", "filelist-tools"]
+
+authors = [
+  { name = "Bill Melvin", email = "bill@billmelvin.com" },
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "make_filelist/mkfilelist.__version__"}
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

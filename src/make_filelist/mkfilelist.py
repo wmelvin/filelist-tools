@@ -22,7 +22,7 @@ from typing import NamedTuple
 
 app_name = Path(__file__).name
 
-app_version = "2024.01.2"
+__version__ = "2024.02.1.dev0"
 
 db_version = 1
 
@@ -397,7 +397,7 @@ def db_info_start(con: sqlite3.Connection, opts: AppOptions):
         os.sep,
         db_version,
         app_name,
-        app_version,
+        __version__,
     )
 
     stmt = "INSERT INTO db_info VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -565,8 +565,8 @@ def main(arglist=None):  # noqa: PLR0915
     if not opts.no_log:
         app_log.set_log_path(opts.log_path)
 
-    app_log.write("START {} (version {})".format(app_name, app_version))
-    print("\n{} (version {})\n".format(app_name, app_version))
+    app_log.write("START {} (version {})".format(app_name, __version__))
+    print("\n{} (version {})\n".format(app_name, __version__))
 
     app_log.write("SCAN '{0}'".format(opts.scandir))
     print("Scanning '{0}'.\n".format(opts.scandir))
