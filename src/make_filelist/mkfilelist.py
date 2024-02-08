@@ -16,13 +16,13 @@ import stat
 import sys
 import time
 from datetime import datetime
+from importlib import metadata
 from pathlib import Path
 from textwrap import dedent
 from typing import NamedTuple
 
-app_name = Path(__file__).name
-
-__version__ = "2024.02.1.dev0"
+DIST_NAME = "filelist-tools"
+MOD_VERSION = "20240208.1"
 
 db_version = 1
 
@@ -78,6 +78,17 @@ class AppLogFile:
 
 run_dt = datetime.now()
 app_log = AppLogFile()
+
+
+def get_app_version() -> str:
+    try:
+        return metadata.version(DIST_NAME)
+    except metadata.PackageNotFoundError:
+        return MOD_VERSION
+
+
+def get_app_name() -> str:
+    return Path(__file__).name
 
 
 def get_args(arglist=None):
@@ -396,8 +407,8 @@ def db_info_start(con: sqlite3.Connection, opts: AppOptions):
         "",
         os.sep,
         db_version,
-        app_name,
-        __version__,
+        get_app_name(),
+        get_app_version(),
     )
 
     stmt = "INSERT INTO db_info VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -565,8 +576,8 @@ def main(arglist=None):  # noqa: PLR0915
     if not opts.no_log:
         app_log.set_log_path(opts.log_path)
 
-    app_log.write("START {} (version {})".format(app_name, __version__))
-    print("\n{} (version {})\n".format(app_name, __version__))
+    app_log.write("START {} (version {})".format(get_app_name(), get_app_version()))
+    print("\n{} (version {})\n".format(get_app_name(), get_app_version()))
 
     app_log.write("SCAN '{0}'".format(opts.scandir))
     print("Scanning '{0}'.\n".format(opts.scandir))

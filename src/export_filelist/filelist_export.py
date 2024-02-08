@@ -4,14 +4,13 @@ import argparse
 import sqlite3
 import string
 import sys
+from importlib import metadata
 from pathlib import Path
 from textwrap import dedent
 from typing import NamedTuple
 
-app_name = Path(__file__).name
-
-#  calver YYYY.0M.MICRO
-app_version = "2024.01.2"
+DIST_NAME = "filelist-tools"
+MOD_VERSION = "20240208.1"
 
 
 class AppOptions(NamedTuple):
@@ -20,6 +19,17 @@ class AppOptions(NamedTuple):
     do_fullname: bool
     do_alt: bool
     do_dfn: bool
+
+
+def get_app_version() -> str:
+    try:
+        return metadata.version(DIST_NAME)
+    except metadata.PackageNotFoundError:
+        return MOD_VERSION
+
+
+def get_app_name() -> str:
+    return Path(__file__).name
 
 
 def get_args(arglist=None):
@@ -321,7 +331,7 @@ def export_filelist_dfn_csv(db_info, out_path: Path, con: sqlite3.Connection):
 
 
 def main(arglist=None):
-    print("\n{} (version {})\n".format(app_name, app_version))
+    print("\n{} (version {})\n".format(get_app_name(), get_app_version()))
 
     opts = get_opts(arglist)
 

@@ -6,13 +6,13 @@ import argparse
 import sqlite3
 import sys
 from datetime import datetime
+from importlib import metadata
 from pathlib import Path
 from textwrap import dedent
 from typing import NamedTuple
 
-app_name = Path(__file__).name
-
-app_version = "2024.01.2"
+DIST_NAME = "filelist-tools"
+MOD_VERSION = "20240208.1"
 
 run_dt = datetime.now()
 
@@ -23,6 +23,17 @@ class AppOptions(NamedTuple):
     outfilename: str
     do_overwrite: bool
     do_append: bool
+
+
+def get_app_version() -> str:
+    try:
+        return metadata.version(DIST_NAME)
+    except metadata.PackageNotFoundError:
+        return MOD_VERSION
+
+
+def get_app_name() -> str:
+    return Path(__file__).name
 
 
 def run_sql(cur: sqlite3.Cursor, stmt: str, data=None):
@@ -358,7 +369,7 @@ def get_opts(arglist=None):
 
 
 def main(arglist=None):
-    print("\n{} (version {})\n".format(app_name, app_version))
+    print("\n{} (version {})\n".format(get_app_name(), get_app_version()))
 
     opts = get_opts(arglist)
 

@@ -9,10 +9,11 @@ from merge_filelist import filelist_merge
 def test_filelist_merge():
     """
     An initial test to get things started.
-    TODO: Add some real tests.
     """
-    assert filelist_merge.app_name
-    assert filelist_merge.app_version
+    name = filelist_merge.get_app_name()
+    ver = filelist_merge.get_app_version()
+    assert name
+    assert ver
 
 
 @pytest.fixture
