@@ -9,6 +9,13 @@
 @check:
   pipenv run ruff format --check
 
+# Remove dist and egg-info
+@clean:
+  rm dist/*
+  rmdir dist
+  rm src/filelist_tools.egg-info/*
+  rmdir src/filelist_tools.egg-info
+
 # ruff format
 @format:
   pipenv run ruff format
