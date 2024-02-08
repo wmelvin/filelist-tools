@@ -369,7 +369,7 @@ def get_opts(arglist=None):
 
 
 def main(arglist=None):
-    print("\n{} (version {})\n".format(get_app_name(), get_app_version()))
+    print(f"\nModule: {get_app_name()} (version {get_app_version()})\n")
 
     opts = get_opts(arglist)
 

@@ -331,7 +331,7 @@ def export_filelist_dfn_csv(db_info, out_path: Path, con: sqlite3.Connection):
 
 
 def main(arglist=None):
-    print("\n{} (version {})\n".format(get_app_name(), get_app_version()))
+    print(f"\nModule: {get_app_name()} (version {get_app_version()})\n")
 
     opts = get_opts(arglist)
 

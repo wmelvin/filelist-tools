@@ -571,7 +571,7 @@ def main(arglist=None):  # noqa: PLR0915
     :param arglist: List of command line arguments. Optional.
     """
 
-    print(f"\n{get_app_name()} (version {get_app_version()})\n")
+    print(f"\nModule: {get_app_name()} (version {get_app_version()})\n")
 
     opts = get_opts(arglist)
 
