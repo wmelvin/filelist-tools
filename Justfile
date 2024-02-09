@@ -26,4 +26,4 @@
 
 # pytest
 @test:
-  pipenv run pytest
+  pipenv run pytest -vv
