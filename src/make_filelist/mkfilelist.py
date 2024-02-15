@@ -36,7 +36,7 @@ class AppOptions(NamedTuple):
     do_overwrite: bool
     dirname_start: int
     title: str
-    log_path: str
+    log_path: Path
     no_log: bool
 
 
@@ -261,7 +261,7 @@ def get_file_info(file_name: str, opts: AppOptions) -> FileInfo:
 
     assert isinstance(file_name, str)  # noqa: S101
     filesize = 0
-    mtime = 0
+    mtime = ""
     sha1 = ""
     md5 = ""
     err_str = ""
