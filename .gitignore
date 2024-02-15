@@ -2,9 +2,10 @@
 venv/
 __pycache__/
 .pytest_cache/
+.ruff_cache/
 dist/
 *.egg-info/
 output_from_test/
 *.log
-
+.coverage
 .python-version

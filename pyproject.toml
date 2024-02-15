@@ -74,12 +74,13 @@ dependencies = [
 [tool.hatch.envs.types]
 dependencies = [
   "mypy>=1.0.0",
+  "pytest",
 ]
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:src/make_filelist tests}"
 
 [tool.coverage.run]
-source_pkgs = ["make_filelist", "tests"]
+source_pkgs = ["make_filelist", "export_filelist", "merge_filelist", "tests"]
 branch = true
 parallel = true
 omit = [
@@ -87,8 +88,8 @@ omit = [
 ]
 
 [tool.coverage.paths]
-make_filelist = ["src/make_filelist", "*/filelist-query/src/make_filelist"]
-tests = ["tests", "*/filelist-query/tests"]
+make_filelist = ["src/make_filelist", "src/export_filelist", "src/merge_filelist"]
+tests = ["tests"]
 
 [tool.coverage.report]
 exclude_lines = [

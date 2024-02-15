@@ -1,8 +1,8 @@
 @default:
   @just --list
 
-# Run test, lint, check, hatch build
-@build: test lint check
+# Run test (matrix), lint, check, hatch build
+@build: testmx lint check
   hatch build
 
 @check:
@@ -23,4 +23,11 @@
 
 @test:
   hatch run test
-  # hatch run pytest -vv
+
+# Run test matrix
+@testmx:
+  hatch run test:test
+
+# Run types:check (mypy)
+@types:
+  hatch run types:check
