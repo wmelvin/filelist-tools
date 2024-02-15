@@ -6,3 +6,5 @@ dist/
 *.egg-info/
 output_from_test/
 *.log
+
+.python-version

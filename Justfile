@@ -1,13 +1,12 @@
 @default:
   @just --list
 
-# Run test, lint, check, pyproject-build
+# Run test, lint, check, hatch build
 @build: test lint check
-  pipenv run pyproject-build
+  hatch build
 
-# ruff format --check
 @check:
-  pipenv run ruff format --check
+  hatch fmt --check
 
 # Remove dist and egg-info
 @clean:
@@ -16,14 +15,12 @@
   rm src/filelist_tools.egg-info/*
   rmdir src/filelist_tools.egg-info
 
-# ruff format
 @format:
-  pipenv run ruff format
+  hatch fmt
 
-# ruff check
 @lint:
-  pipenv run ruff check
+  hatch fmt --linter
 
-# pytest
 @test:
-  pipenv run pytest -vv
+  hatch run test
+  # hatch run pytest -vv
