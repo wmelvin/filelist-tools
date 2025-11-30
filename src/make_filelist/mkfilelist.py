@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-""" Scan a directory tree and create a SQLite database containing some basic
+"""Scan a directory tree and create a SQLite database containing some basic
 information about each file: File name, Directory path, Last Modified
 timestamp, Size, SHA1 and MD5 hashes.
 """
@@ -647,9 +647,7 @@ def main(arglist=None):  # noqa: PLR0915
         #  Include initial scan in total run time.
         run_time = datetime.now() - run_dt
 
-        msg = (
-            "Finished at {0} (100%): {1:,} files, {2:,} bytes. " "Run time {3}"
-        ).format(
+        msg = ("Finished at {0} (100%): {1:,} files, {2:,} bytes. Run time {3}").format(
             datetime.now().strftime("%H:%M:%S"),
             n_files,
             completed_size,

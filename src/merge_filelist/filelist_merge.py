@@ -250,7 +250,7 @@ def insert_filelist(
 
 def get_args(arglist=None):
     ap = argparse.ArgumentParser(
-        description="Merges two or more SQLite databases created by " "mkfilelist.py.\n"
+        description="Merges two or more SQLite databases created by mkfilelist.py.\n"
     )
 
     ap.add_argument(

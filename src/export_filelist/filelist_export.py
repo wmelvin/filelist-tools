@@ -34,7 +34,7 @@ def get_app_name() -> str:
 
 def get_args(arglist=None):
     ap = argparse.ArgumentParser(
-        description="Export data from a SQLite database created by " "'mkfilelist.py'."
+        description="Export data from a SQLite database created by 'mkfilelist.py'."
     )
 
     ap.add_argument(
@@ -138,8 +138,7 @@ def export_filelist_csv(db_info, out_path: Path, con: sqlite3.Connection):
 
     with fp.open("w") as f:
         f.write(
-            '"SHA1","MD5","FileName","Size","LastModified","Level",'
-            '"DirName","Error"\n'
+            '"SHA1","MD5","FileName","Size","LastModified","Level","DirName","Error"\n'
         )
 
         for row in cur.execute(stmt):
@@ -171,9 +170,7 @@ def export_fullname_csv(db_info, out_path: Path, con: sqlite3.Connection):
 
     cur = con.cursor()
 
-    stmt = (
-        "SELECT dir_name, file_name FROM view_filelist " "ORDER BY dir_name, file_name"
-    )
+    stmt = "SELECT dir_name, file_name FROM view_filelist ORDER BY dir_name, file_name"
 
     with fp.open("w") as f:
         f.write('"FullName"\n')
@@ -257,7 +254,7 @@ def export_filelist_alt_csv(db_info, out_path: Path, con: sqlite3.Connection):
             full_name = "{}{}{}".format(row[i_dir_name], sep, row[i_file_name])
             file_ext = Path(row[i_file_name]).suffix
             f.write(
-                '"{}","{}","{}","{}","{}","{}","{}","{}","{}","{}",' '"{}"\n'.format(
+                '"{}","{}","{}","{}","{}","{}","{}","{}","{}","{}","{}"\n'.format(
                     key,
                     row[i_sha1],
                     row[i_file_name],
@@ -311,9 +308,7 @@ def export_filelist_dfn_csv(db_info, out_path: Path, con: sqlite3.Connection):
     i_error = 6
 
     with fp.open("w") as f:
-        f.write(
-            '"DirName","FileName","LastModified","Size","SHA1",' '"Level","Error"\n'
-        )
+        f.write('"DirName","FileName","LastModified","Size","SHA1","Level","Error"\n')
         for row in cur.execute(stmt):
             f.write(
                 '"{}","{}","{}","{}","{}","{}","{}"\n'.format(

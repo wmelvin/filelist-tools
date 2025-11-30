@@ -10,10 +10,8 @@
 
 # Remove dist and egg-info
 @clean:
-  rm dist/*
-  rmdir dist
-  rm src/filelist_tools.egg-info/*
-  rmdir src/filelist_tools.egg-info
+  -rm dist/*
+  -rm src/filelist_tools.egg-info/*
 
 @format:
   hatch fmt

@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+
 from make_filelist.mkfilelist import (
     AppOptions,
     get_args,
@@ -182,9 +183,9 @@ def test_w_trim_parent_option(tmpdir_with_files, tmp_path):
     assert result == 0
     dbfiles = list(outdir.glob("*.sqlite"))
     assert dbfiles, "Should create a .sqlite file in the output directory."
-    assert not (
-        outdir / "mkfilelist.log"
-    ).exists(), "Should not make a log file given '--no-log'."
+    assert not (outdir / "mkfilelist.log").exists(), (
+        "Should not make a log file given '--no-log'."
+    )
 
 
 def test_get_pct_complete():
