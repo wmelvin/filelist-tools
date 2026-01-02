@@ -1,12 +1,12 @@
 @default:
   @just --list
 
-# Run test (matrix), lint, check, hatch build
-@build: testmx lint check
-  hatch build
+# Run test, lint, check, hatch build
+@build: test lint check
+  uv build
 
 @check:
-  hatch fmt --check
+  uv run ruff format --check
 
 # Remove dist and egg-info
 @clean:
@@ -14,18 +14,18 @@
   -rm src/filelist_tools.egg-info/*
 
 @format:
-  hatch fmt
+  uv run ruff format
 
 @lint:
-  hatch fmt --linter
+  uv run ruff check
 
 @test:
-  hatch run test
+  uv run pytest -vv
 
-# Run test matrix
-@testmx:
-  hatch run test:test
+# Run test matrix using tox
+@tox:
+  uv run tox
 
-# Run types:check (mypy)
-@types:
-  hatch run types:check
+# Redirect 'ty check' to temp.txt
+@ty:
+  uv run ty check > temp.txt
