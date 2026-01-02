@@ -9,3 +9,4 @@ output_from_test/
 *.log
 .coverage
 .python-version
+temp.*

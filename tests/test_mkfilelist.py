@@ -55,7 +55,9 @@ def test_get_hashes(test_file_fixture):
 
 def test_get_file_info(test_file_fixture):
     test_file, sha1sum_result, md5sum_result = test_file_fixture
-    opts = AppOptions(str(test_file.parent), None, None, False, 0, "TITLE", None, True)
+    opts = AppOptions(
+        str(test_file.parent), "", None, False, 0, "TITLE", test_file.parent, True
+    )
     file_info = get_file_info(str(test_file), opts)
     assert str(test_file.name) == file_info.file_name
     assert str(test_file.parent) == file_info.dir_name
@@ -87,7 +89,7 @@ def test_get_opts(test_file_fixture):
     opts: AppOptions = get_opts(args)
     assert opts.scandir == str(test_file_fixture[0].parent)
     assert opts.dirname_start == 0
-    assert Path(opts.outfilename).name == "TestFileList.sqlite"
+    assert opts.outfilename and Path(opts.outfilename).name == "TestFileList.sqlite"
     assert opts.do_overwrite is False
 
 

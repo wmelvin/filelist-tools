@@ -22,7 +22,7 @@ from textwrap import dedent
 from typing import NamedTuple
 
 DIST_NAME = "filelist-tools"
-MOD_VERSION = "20240208.1"
+MOD_VERSION = "2026.01.02.1"
 
 db_version = 1
 
@@ -32,7 +32,7 @@ class AppOptions(NamedTuple):
 
     scandir: str
     outdir: str
-    outfilename: str
+    outfilename: str | None
     do_overwrite: bool
     dirname_start: int
     title: str

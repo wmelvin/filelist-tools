@@ -12,13 +12,13 @@ from textwrap import dedent
 from typing import NamedTuple
 
 DIST_NAME = "filelist-tools"
-MOD_VERSION = "20240208.1"
+MOD_VERSION = "2026.01.02.1"
 
 run_dt = datetime.now()
 
 
 class AppOptions(NamedTuple):
-    src_dbs: str
+    src_dbs: list[tuple[Path, str]]
     outpath: Path
     outfilename: str
     do_overwrite: bool
@@ -245,7 +245,11 @@ def insert_filelist(
     dst_con.commit()
     dst_cur.close()
 
-    create_view_for_filelist(dst_con, filelist_id)
+    if filelist_id:
+        create_view_for_filelist(dst_con, filelist_id)
+    else:
+        sys.stderr.write("\nERROR: Failed to get filelist ID from last inserted row.\n")
+        sys.exit(1)
 
 
 def get_args(arglist=None):
@@ -318,14 +322,16 @@ def get_src_dbs(source_files: list[str]) -> list[tuple[Path, str]]:
         src_path = Path(src_parts[0])
 
         if not src_path.exists():
-            raise SystemExit("File not found: '{}'".format(src_parts[0]))
+            sys.stderr.write(f"\nFile not found: '{src_parts[0]}'\n")
+            sys.exit(1)
 
         if len(src_parts) == 1:
             src_dbs.append((src_path, None))
         elif len(src_parts) == 2:
             src_dbs.append((src_path, src_parts[1]))
         else:
-            raise SystemExit("Invalid file name and tag (too many commas).")
+            sys.stderr.write("\nInvalid file name and tag (too many commas).\n")
+            sys.exit(1)
 
     return src_dbs
 
@@ -334,14 +340,16 @@ def get_opts(arglist=None):
     args = get_args(arglist)
 
     if not args.source_files:
-        raise SystemExit("No source files specified.")
+        sys.stderr.write("\nNo source files specified.\n")
+        sys.exit(1)
 
     src_dbs = get_src_dbs(args.source_files)
 
     if args.outdir:
         outpath = Path(args.outdir)
         if not (outpath.exists() and outpath.is_dir()):
-            raise SystemExit("Path not found (outdir): " + outpath)
+            sys.stderr.write(f"\nPath not found (outdir): {outpath}\n")
+            sys.exit(1)
     else:
         outpath = Path.cwd()
 
@@ -349,15 +357,17 @@ def get_opts(arglist=None):
         p = Path(args.outfilename)
         if p.parent.name:
             if args.outdir:
-                raise SystemExit(
-                    "Do not use outdir (-o, --output-to) when including the "
-                    "directory in outfilename (--name)."
+                sys.stderr.write(
+                    "\nDo not use outdir (-o, --output-to) when including the "
+                    "directory in outfilename (--name).\n"
                 )
+                sys.exit(1)
             outpath = p.parent
 
         check_fn = outpath.joinpath(p.name)
         if check_fn.exists() and not (args.do_overwrite or args.do_append):
-            raise SystemExit("Output file already exists: {}".format(check_fn))
+            sys.stderr.write(f"\nOutput file already exists: {check_fn}\n")
+            sys.exit(1)
 
         outfilename = p.name
     else:
@@ -384,9 +394,11 @@ def main(arglist=None):
             print("Overwrite existing file.")
             output_path.unlink()
         elif not opts.do_append:
-            raise SystemExit("Cannot replace existing output file.")
+            sys.stderr.write("\nCannot replace existing output file.\n")
+            sys.exit(1)
     elif opts.do_append:
-        raise SystemExit("Destination file not found. Cannot append.")
+        sys.stderr.write("\nDestination file not found. Cannot append.\n")
+        sys.exit(1)
 
     out_con = sqlite3.connect(output_path)
 
