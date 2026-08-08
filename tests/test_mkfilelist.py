@@ -330,3 +330,32 @@ def test_schema_files(tmpdir_with_files, tmp_path):
         ("error", "TEXT", False),
     ]
     assert columns == expected
+
+
+def test_schema_view_filelist(tmpdir_with_files, tmp_path):
+    outdir = tmp_path / "output"
+    outdir.mkdir()
+    args = [str(tmpdir_with_files), "TITLE", f"--output-to={outdir}"]
+    main(args)
+
+    dbfile = next(outdir.glob("*.sqlite"))
+    con = sqlite3.connect(dbfile)
+    try:
+        cur = con.execute("PRAGMA table_info(view_filelist)")
+        columns = [(row[1], row[2], bool(row[5])) for row in cur.fetchall()]
+    finally:
+        con.close()
+
+    expected = [
+        ("id", "INTEGER", False),
+        ("sha1", "TEXT", False),
+        ("md5", "TEXT", False),
+        ("file_name", "TEXT", False),
+        ("file_size", "INTEGER", False),
+        ("last_modified", "TEXT", False),
+        ("dir_level", "INTEGER", False),
+        ("dir_id", "INTEGER", False),
+        ("dir_name", "TEXT", False),
+        ("error", "TEXT", False),
+    ]
+    assert columns == expected
